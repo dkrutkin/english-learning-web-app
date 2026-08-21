@@ -16,6 +16,7 @@ type AuthContextValue = {
   user: User | null
   status: AuthStatus
   isConfigured: boolean
+  isMock: boolean
   mockCredentials: { email: string; password: string } | null
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<{ needsEmailConfirmation: boolean }>
@@ -118,6 +119,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       user: session?.user ?? null,
       status,
       isConfigured: isSupabaseConfigured || isMockAuthEnabled,
+      isMock: isUsingMock,
       mockCredentials: isMockAuthEnabled && mockCredentials ? mockCredentials : null,
       async signIn(email, password) {
         if (

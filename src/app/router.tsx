@@ -4,6 +4,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import { RouteFallback } from '../components/layout/RouteFallback'
 import { ProtectedRoute, PublicOnlyRoute } from '../features/auth/AuthGate'
+import { OnboardingGate } from '../features/onboarding/OnboardingGate'
 
 const page = <T extends Record<string, unknown>, K extends keyof T>(
   loader: () => Promise<T>,
@@ -57,21 +58,26 @@ const routes = [
     children: [
       { path: '/onboarding', element: loading(<OnboardingPage />) },
       {
-        path: '/app',
-        element: <AppShell />,
+        element: <OnboardingGate />,
         children: [
-          { index: true, element: <Navigate replace to="/app/home" /> },
-          { path: 'home', element: loading(<DashboardPage />) },
-          { path: 'learn', element: loading(<LearnPage />) },
-          { path: 'learn/:levelSlug', element: loading(<LearnPage />) },
-          { path: 'learn/:levelSlug/:moduleSlug', element: loading(<LearnPage />) },
-          { path: 'progress', element: loading(<ProgressPage />) },
-          { path: 'achievements', element: loading(<AchievementsPage />) },
-          { path: 'profile', element: loading(<ProfilePage />) },
-          { path: 'settings', element: loading(<SettingsPage />) },
+          {
+            path: '/app',
+            element: <AppShell />,
+            children: [
+              { index: true, element: <Navigate replace to="/app/home" /> },
+              { path: 'home', element: loading(<DashboardPage />) },
+              { path: 'learn', element: loading(<LearnPage />) },
+              { path: 'learn/:levelSlug', element: loading(<LearnPage />) },
+              { path: 'learn/:levelSlug/:moduleSlug', element: loading(<LearnPage />) },
+              { path: 'progress', element: loading(<ProgressPage />) },
+              { path: 'achievements', element: loading(<AchievementsPage />) },
+              { path: 'profile', element: loading(<ProfilePage />) },
+              { path: 'settings', element: loading(<SettingsPage />) },
+            ],
+          },
+          { path: '/app/lesson/:lessonSlug', element: loading(<LessonPage />) },
         ],
       },
-      { path: '/app/lesson/:lessonSlug', element: loading(<LessonPage />) },
     ],
   },
   { path: '*', element: loading(<NotFoundPage />) },

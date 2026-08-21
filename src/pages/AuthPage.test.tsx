@@ -6,6 +6,7 @@ import { AuthPage } from './AuthPage'
 
 const auth = vi.hoisted(() => ({
   isConfigured: true,
+  isMock: false,
   mockCredentials: null,
   signIn: vi.fn(),
   signUp: vi.fn(),

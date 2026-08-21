@@ -910,58 +910,222 @@ h1 {
 }
 
 .onboarding-page {
+  position: relative;
   display: grid;
   min-height: 100vh;
-  grid-template-columns: 1fr 1fr;
-  align-items: center;
-  gap: 80px;
-  padding: 8vw;
+  padding: clamp(32px, 5vw, 80px) 20px;
+  place-items: center;
 }
-.onboarding-page > section {
-  max-width: 560px;
+.onboarding-panel {
+  width: min(100%, 720px);
 }
 .onboarding-page h1 {
-  margin-bottom: 20px;
-  font-size: clamp(42px, 5vw, 66px);
-  line-height: 1.05;
+  max-width: 620px;
+  margin: 0 auto 16px;
+  font-size: clamp(38px, 4.2vw, 60px);
+  line-height: 1.08;
+  text-align: center;
 }
-.onboarding-page > section > p:not(.eyebrow) {
-  margin-bottom: 30px;
+.onboarding-heading {
+  text-align: center;
+}
+.onboarding-heading > p:not(.eyebrow) {
+  max-width: 530px;
+  margin: 0 auto;
   color: var(--text-muted);
-  font-size: 18px;
+  font-size: 17px;
   line-height: 1.6;
 }
 .onboarding-progress {
-  margin-bottom: 72px;
-  color: var(--text-muted);
-  font-size: 12px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: 100%;
 }
 .onboarding-progress .progress-line {
-  margin-top: 10px;
+  height: 5px;
+  margin: 0;
+  border-radius: 0;
 }
-.onboarding-visual {
-  display: flex;
-  min-height: 480px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border);
-  border-radius: 28px;
-  background: radial-gradient(circle, var(--accent-subtle), var(--surface));
+.onboarding-progress .progress-line span {
+  border-radius: 0;
+  transition: width 240ms ease;
 }
-.onboarding-visual span {
+.onboarding-options {
   display: grid;
-  width: 62px;
-  height: 62px;
-  place-items: center;
-  border-radius: 18px;
-  background: var(--surface);
-  font-weight: 800;
-  box-shadow: var(--shadow);
+  gap: 10px;
+  min-width: 0;
+  margin: 30px 0 0;
+  border: 0;
+  padding: 0;
 }
-.onboarding-visual i {
+.onboarding-options legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.onboarding-options--levels,
+.onboarding-options--goals,
+.onboarding-options--weekly {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.onboarding-option {
+  position: relative;
+  display: flex;
+  min-height: 78px;
+  align-items: flex-start;
+  gap: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 16px;
+  background: var(--surface);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+.onboarding-option:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  transform: translateY(-1px);
+}
+.onboarding-option.is-selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent-subtle) 82%, var(--surface));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent),
+    0 10px 28px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.onboarding-option.is-selected .onboarding-option__title-row strong {
+  color: var(--accent);
+}
+.onboarding-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  opacity: 0;
+}
+.onboarding-option:has(input:focus-visible) {
+  outline: 3px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  outline-offset: 3px;
+}
+.onboarding-option__icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+.onboarding-option__copy {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 5px;
+}
+.onboarding-option__title-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.onboarding-option__title-row strong {
+  font-size: 15px;
+}
+.onboarding-option__title-row span,
+.onboarding-option__copy small {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.onboarding-option__title-row em {
+  border-radius: 999px;
+  padding: 4px 7px;
+  background: var(--accent-subtle);
+  color: var(--accent);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 750;
+}
+.onboarding-option__check {
+  display: grid;
   width: 22px;
-  height: 2px;
-  background: var(--border);
+  height: 22px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: white;
+}
+.onboarding-option.is-selected .onboarding-option__check {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.onboarding-summary {
+  display: grid;
+  gap: 10px;
+  margin: 30px 0 0;
+}
+.onboarding-summary div {
+  display: flex;
+  min-height: 68px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 18px;
+  background: var(--surface);
+}
+.onboarding-summary dt {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.onboarding-summary dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: right;
+}
+.onboarding-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 34px;
+}
+.onboarding-back {
+  padding-inline: 0;
+  color: var(--text-muted);
+}
+.onboarding-error {
+  margin: 18px 0 -10px;
+  color: var(--danger);
+  font-size: 14px;
+}
+.onboarding-state {
+  display: grid;
+  min-height: 100vh;
+  padding: 24px;
+  place-content: center;
+  text-align: center;
+}
+.onboarding-state p {
+  color: var(--text-muted);
+}
+.onboarding-state .button {
+  justify-self: center;
 }
 .lesson-page {
   min-height: 100vh;
@@ -1202,19 +1366,19 @@ h1 {
     justify-content: center;
   }
   .onboarding-page {
-    display: flex;
-    min-height: 100vh;
-    flex-direction: column-reverse;
-    align-items: stretch;
-    justify-content: flex-end;
-    gap: 35px;
+    align-items: start;
     padding: 28px 20px 50px;
   }
-  .onboarding-visual {
-    min-height: 220px;
+  .onboarding-page h1 {
+    font-size: clamp(34px, 10vw, 48px);
   }
-  .onboarding-progress {
-    margin-bottom: 45px;
+  .onboarding-options--levels,
+  .onboarding-options--goals,
+  .onboarding-options--weekly {
+    grid-template-columns: 1fr;
+  }
+  .onboarding-actions .button--primary {
+    min-width: 150px;
   }
   .lesson-page {
     padding-inline: 18px;
