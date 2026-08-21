@@ -3,6 +3,7 @@ import { lazy, type ReactNode, Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import { RouteFallback } from '../components/layout/RouteFallback'
+import { ProtectedRoute, PublicOnlyRoute } from '../features/auth/AuthGate'
 
 const page = <T extends Record<string, unknown>, K extends keyof T>(
   loader: () => Promise<T>,
@@ -16,6 +17,10 @@ const page = <T extends Record<string, unknown>, K extends keyof T>(
 const LandingPage = page(() => import('../pages/LandingPage'), 'LandingPage')
 const AuthPage = lazy(() =>
   import('../pages/AuthPage').then(({ AuthPage }) => ({ default: AuthPage })),
+)
+const EmailConfirmationPage = page(
+  () => import('../pages/EmailConfirmationPage'),
+  'EmailConfirmationPage',
 )
 const OnboardingPage = page(() => import('../pages/OnboardingPage'), 'OnboardingPage')
 const DashboardPage = page(() => import('../pages/DashboardPage'), 'DashboardPage')
@@ -32,38 +37,43 @@ const loading = (element: ReactNode) => <Suspense fallback={<RouteFallback />}>{
 const routes = [
   { path: '/', element: loading(<LandingPage />) },
   {
-    path: '/login',
-    element: loading(<AuthPage mode="login" />),
+    element: <PublicOnlyRoute />,
+    children: [
+      { path: '/login', element: loading(<AuthPage mode="login" />) },
+      { path: '/signup', element: loading(<AuthPage mode="signup" />) },
+      {
+        path: '/forgot-password',
+        element: loading(<AuthPage mode="forgot-password" />),
+      },
+    ],
   },
-  {
-    path: '/signup',
-    element: loading(<AuthPage mode="signup" />),
-  },
-  {
-    path: '/forgot-password',
-    element: loading(<AuthPage mode="forgot-password" />),
-  },
+  { path: '/confirm-email', element: loading(<EmailConfirmationPage />) },
   {
     path: '/reset-password',
     element: loading(<AuthPage mode="reset-password" />),
   },
-  { path: '/onboarding', element: loading(<OnboardingPage />) },
-  { path: '/app', element: <Navigate replace to="/app/home" /> },
   {
-    path: '/app',
-    element: <AppShell />,
+    element: <ProtectedRoute />,
     children: [
-      { path: 'home', element: loading(<DashboardPage />) },
-      { path: 'learn', element: loading(<LearnPage />) },
-      { path: 'learn/:levelSlug', element: loading(<LearnPage />) },
-      { path: 'learn/:levelSlug/:moduleSlug', element: loading(<LearnPage />) },
-      { path: 'progress', element: loading(<ProgressPage />) },
-      { path: 'achievements', element: loading(<AchievementsPage />) },
-      { path: 'profile', element: loading(<ProfilePage />) },
-      { path: 'settings', element: loading(<SettingsPage />) },
+      { path: '/onboarding', element: loading(<OnboardingPage />) },
+      {
+        path: '/app',
+        element: <AppShell />,
+        children: [
+          { index: true, element: <Navigate replace to="/app/home" /> },
+          { path: 'home', element: loading(<DashboardPage />) },
+          { path: 'learn', element: loading(<LearnPage />) },
+          { path: 'learn/:levelSlug', element: loading(<LearnPage />) },
+          { path: 'learn/:levelSlug/:moduleSlug', element: loading(<LearnPage />) },
+          { path: 'progress', element: loading(<ProgressPage />) },
+          { path: 'achievements', element: loading(<AchievementsPage />) },
+          { path: 'profile', element: loading(<ProfilePage />) },
+          { path: 'settings', element: loading(<SettingsPage />) },
+        ],
+      },
+      { path: '/app/lesson/:lessonSlug', element: loading(<LessonPage />) },
     ],
   },
-  { path: '/app/lesson/:lessonSlug', element: loading(<LessonPage />) },
   { path: '*', element: loading(<NotFoundPage />) },
 ]
 

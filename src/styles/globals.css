@@ -129,6 +129,11 @@ h1 {
 .button:hover {
   transform: translateY(-1px);
 }
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+  transform: none;
+}
 .button--primary {
   background: var(--accent);
   color: white;
@@ -347,6 +352,46 @@ h1 {
 .auth-card input:focus {
   border-color: var(--accent);
   outline: 3px solid color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.auth-card input:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.auth-card--message {
+  text-align: center;
+}
+.auth-message-icon {
+  display: inline-grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border-radius: 18px;
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+.auth-card--message .auth-heading {
+  margin-top: 24px;
+}
+.auth-help {
+  margin: -8px 0 24px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.form-message {
+  margin: 0 0 18px;
+  border-radius: 11px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.form-message--error {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+.form-message--success {
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
 }
 .form-link {
   margin: -7px 0 2px auto;
@@ -781,6 +826,36 @@ h1 {
 .status-dot.is-ready {
   background: color-mix(in srgb, var(--success) 14%, transparent);
   color: var(--success);
+}
+.modal-backdrop {
+  position: fixed;
+  z-index: 50;
+  display: grid;
+  background: rgb(0 0 0 / 48%);
+  inset: 0;
+  padding: 24px;
+  place-items: center;
+}
+.modal-card {
+  width: min(100%, 420px);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.modal-card h2 {
+  margin-bottom: 10px;
+}
+.modal-card p {
+  margin-bottom: 24px;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .onboarding-page {
