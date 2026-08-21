@@ -1,6 +1,5 @@
 import { Award, BookOpen, ChartNoAxesCombined, Home, Settings, UserRound } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
-import { ThemeToggle } from '../theme/ThemeToggle'
 
 const primaryItems = [
   { to: '/app/home', label: 'Home', icon: Home },
@@ -15,7 +14,7 @@ const secondaryItems = [
 
 function NavigationItem({ to, label, icon: Icon }: (typeof primaryItems)[number]) {
   return (
-    <NavLink className={({ isActive }) => `nav-item${isActive ? 'is-active' : ''}`} to={to}>
+    <NavLink className={({ isActive }) => (isActive ? 'nav-item is-active' : 'nav-item')} to={to}>
       <Icon aria-hidden="true" size={20} />
       <span>{label}</span>
     </NavLink>
@@ -38,7 +37,6 @@ export function Sidebar() {
         {secondaryItems.map((item) => (
           <NavigationItem key={item.to} {...item} />
         ))}
-        <ThemeToggle compact />
       </div>
     </aside>
   )

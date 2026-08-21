@@ -408,9 +408,6 @@ h1 {
   background: var(--accent-subtle);
   color: var(--accent);
 }
-.sidebar-footer .icon-button {
-  margin-top: 10px;
-}
 .app-content {
   min-width: 0;
 }
