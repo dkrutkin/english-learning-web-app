@@ -75,6 +75,10 @@ const routes = [
               { path: 'settings', element: loading(<SettingsPage />) },
             ],
           },
+          {
+            path: '/app/lesson/:levelSlug/:moduleSlug/:lessonSlug',
+            element: loading(<LessonPage />),
+          },
           { path: '/app/lesson/:lessonSlug', element: loading(<LessonPage />) },
         ],
       },
