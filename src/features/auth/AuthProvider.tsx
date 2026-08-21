@@ -16,6 +16,7 @@ type AuthContextValue = {
   user: User | null
   status: AuthStatus
   isConfigured: boolean
+  mockCredentials: { email: string; password: string } | null
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<{ needsEmailConfirmation: boolean }>
   requestPasswordReset: (email: string) => Promise<void>
@@ -24,6 +25,49 @@ type AuthContextValue = {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
+
+const mockSessionStorageKey = import.meta.env.DEV ? 'fluent-local-mock-session' : ''
+const mockCredentials = import.meta.env.DEV
+  ? {
+      email: 'demo@fluent.local',
+      password: 'FluentDemo2026!',
+    }
+  : null
+const isMockAuthEnabled = import.meta.env.DEV && import.meta.env.VITE_ENABLE_MOCK_AUTH === 'true'
+
+function createMockSession(): Session {
+  if (!mockCredentials) throw new Error('Local mock authentication is unavailable.')
+
+  const timestamp = new Date().toISOString()
+  const user: User = {
+    id: '00000000-0000-4000-8000-000000000001',
+    app_metadata: { provider: 'email', providers: ['email'] },
+    user_metadata: { display_name: 'Demo Learner' },
+    aud: 'authenticated',
+    created_at: timestamp,
+    updated_at: timestamp,
+    email: mockCredentials.email,
+    email_confirmed_at: timestamp,
+    confirmed_at: timestamp,
+    last_sign_in_at: timestamp,
+    role: 'authenticated',
+    identities: [],
+    is_anonymous: false,
+  }
+
+  return {
+    access_token: 'fluent-local-mock-access-token',
+    refresh_token: 'fluent-local-mock-refresh-token',
+    expires_in: 3600,
+    expires_at: Math.floor(Date.now() / 1000) + 3600,
+    token_type: 'bearer',
+    user,
+  }
+}
+
+function hasStoredMockSession() {
+  return isMockAuthEnabled && window.localStorage.getItem(mockSessionStorageKey) === 'true'
+}
 
 const redirectUrl = (path: string) => new URL(path, window.location.origin).toString()
 
@@ -35,13 +79,17 @@ function requireSupabase() {
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {
-  const [session, setSession] = useState<Session | null>(null)
-  const [status, setStatus] = useState<AuthStatus>(
-    isSupabaseConfigured ? 'loading' : 'unauthenticated',
+  const [isUsingMock, setIsUsingMock] = useState(hasStoredMockSession)
+  const [session, setSession] = useState<Session | null>(() =>
+    hasStoredMockSession() ? createMockSession() : null,
   )
+  const [status, setStatus] = useState<AuthStatus>(() => {
+    if (hasStoredMockSession()) return 'authenticated'
+    return isSupabaseConfigured ? 'loading' : 'unauthenticated'
+  })
 
   useEffect(() => {
-    if (!supabase) return
+    if (isUsingMock || !supabase) return
 
     let isMounted = true
     void supabase.auth.getSession().then(({ data, error }) => {
@@ -62,15 +110,28 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isMounted = false
       subscription.unsubscribe()
     }
-  }, [])
+  }, [isUsingMock])
 
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
       user: session?.user ?? null,
       status,
-      isConfigured: isSupabaseConfigured,
+      isConfigured: isSupabaseConfigured || isMockAuthEnabled,
+      mockCredentials: isMockAuthEnabled && mockCredentials ? mockCredentials : null,
       async signIn(email, password) {
+        if (
+          isMockAuthEnabled &&
+          mockCredentials &&
+          email === mockCredentials.email &&
+          password === mockCredentials.password
+        ) {
+          window.localStorage.setItem(mockSessionStorageKey, 'true')
+          setIsUsingMock(true)
+          setSession(createMockSession())
+          setStatus('authenticated')
+          return
+        }
         const { error } = await requireSupabase().auth.signInWithPassword({ email, password })
         if (error) throw error
       },
@@ -96,11 +157,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
         await client.auth.signOut({ scope: 'local' })
       },
       async signOut() {
+        if (isUsingMock) {
+          window.localStorage.removeItem(mockSessionStorageKey)
+          setSession(null)
+          setStatus('unauthenticated')
+          setIsUsingMock(false)
+          return
+        }
         const { error } = await requireSupabase().auth.signOut({ scope: 'local' })
         if (error) throw error
       },
     }),
-    [session, status],
+    [isUsingMock, session, status],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

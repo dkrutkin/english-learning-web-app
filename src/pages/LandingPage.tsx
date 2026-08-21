@@ -25,7 +25,6 @@ export function LandingPage() {
     <div className="marketing-page">
       <header className="marketing-header">
         <Link className="brand" to="/">
-          <span className="brand-mark">F</span>
           <span>Fluent</span>
         </Link>
         <div className="header-actions">
@@ -42,7 +41,7 @@ export function LandingPage() {
         <section className="hero-section">
           <div className="hero-copy">
             <p className="eyebrow">English from A2 to C1</p>
-            <h1>Build English you can actually use.</h1>
+            <h1>Build English you can actually use</h1>
             <p className="hero-description">
               Structured lessons, practical exercises and clear progress from A2 to C1.
             </p>
@@ -55,17 +54,10 @@ export function LandingPage() {
               </Link>
             </div>
           </div>
-          <div aria-label="Learning journey from A2 to C1" className="hero-visual" role="img">
-            <div className="journey-card journey-card--a2">A2</div>
-            <div className="journey-line" />
-            <div className="journey-card journey-card--b1">B1</div>
-            <div className="journey-line" />
-            <div className="journey-card journey-card--c1">C1</div>
-          </div>
         </section>
         <section className="content-section">
           <p className="eyebrow">How it works</p>
-          <h2>A clear path to better English.</h2>
+          <h2>A clear path to better English</h2>
           <div className="benefit-grid">
             {benefits.map(({ icon: Icon, title, text }) => (
               <article className="feature-card" key={title}>

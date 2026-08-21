@@ -25,7 +25,6 @@ export function Sidebar() {
   return (
     <aside className="sidebar">
       <NavLink aria-label="Fluent home" className="brand" to="/app/home">
-        <span className="brand-mark">F</span>
         <span>Fluent</span>
       </NavLink>
       <nav aria-label="Primary navigation" className="nav-list">

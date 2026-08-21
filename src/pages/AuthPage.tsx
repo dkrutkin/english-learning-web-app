@@ -55,6 +55,23 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(state?.notice ?? null)
 
+  async function handleDemoSignIn() {
+    if (!auth.mockCredentials) return
+
+    setError(null)
+    setNotice(null)
+    setIsSubmitting(true)
+    try {
+      await auth.signIn(auth.mockCredentials.email, auth.mockCredentials.password)
+      const destination = state?.from?.startsWith('/') ? state.from : '/app/home'
+      navigate(destination, { replace: true })
+    } catch (submissionError) {
+      setError(authErrorMessage(submissionError))
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
@@ -114,13 +131,28 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     <main className="auth-page">
       <section className="auth-card">
         <Link className="brand brand--center" to="/">
-          <span className="brand-mark">F</span>
           <span>Fluent</span>
         </Link>
         <div className="auth-heading">
           <h1>{current.title}</h1>
           <p>{current.description}</p>
         </div>
+        {import.meta.env.DEV && mode === 'login' && auth.mockCredentials && (
+          <aside className="demo-account-note">
+            <div>
+              <strong>Local demo account</strong>
+              <span>{auth.mockCredentials.email}</span>
+            </div>
+            <button
+              className="button button--secondary button--full"
+              disabled={isSubmitting}
+              onClick={handleDemoSignIn}
+              type="button"
+            >
+              Continue with demo account
+            </button>
+          </aside>
+        )}
         {!auth.isConfigured && (
           <p className="form-message form-message--error" role="alert">
             Authentication is not configured. Add the Supabase environment variables.

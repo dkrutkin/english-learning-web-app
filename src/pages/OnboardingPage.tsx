@@ -12,7 +12,7 @@ export function OnboardingPage() {
           </div>
         </div>
         <p className="eyebrow">Welcome</p>
-        <h1>Let's build your English step by step.</h1>
+        <h1>Let's build your English step by step</h1>
         <p>We'll use your goals to set up a learning path that fits you.</p>
         <Link className="button button--primary button--large" to="/app/home">
           Get started <ArrowRight size={18} />

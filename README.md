@@ -43,9 +43,23 @@ npm run dev
 ```dotenv
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+VITE_ENABLE_MOCK_AUTH=false
 ```
 
 Никогда не добавляйте во frontend `service_role`, secret key или пароль базы данных.
+
+### Локальный demo-аккаунт
+
+Для проверки интерфейса без создания пользователя в Supabase добавьте в локальный `.env`:
+
+```dotenv
+VITE_ENABLE_MOCK_AUTH=true
+```
+
+После перезапуска dev-сервера на форме входа появится кнопка `Continue with demo account`.
+Нажмите её, чтобы открыть защищённые страницы без ввода данных. Мок доступен только в Vite
+development mode и не включается в production-сборке. Он предназначен для проверки интерфейса
+и маршрутов, но не проверяет Supabase, RLS или сохранение данных.
 
 ## Локальный Supabase
 
