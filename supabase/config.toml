@@ -31,3 +31,7 @@ enable_signup = true
 enable_signup = true
 double_confirm_changes = true
 enable_confirmations = true
+
+[auth.email.template.confirmation]
+subject = "Confirm your Fluent account"
+content_path = "./supabase/templates/confirmation.html"

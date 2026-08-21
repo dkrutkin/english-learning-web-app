@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <meta content="light only" name="color-scheme" />
+    <meta content="light" name="supported-color-schemes" />
+    <title>Confirm your Fluent account</title>
+    <style>
+      :root {
+        color-scheme: light only;
+        supported-color-schemes: light;
+      }
+
+      @media only screen and (max-width: 620px) {
+        .email-shell {
+          padding: 20px 12px !important;
+        }
+
+        .email-card {
+          border-radius: 20px !important;
+        }
+
+        .email-content {
+          padding: 36px 24px 32px !important;
+        }
+
+        .email-title {
+          font-size: 30px !important;
+          line-height: 36px !important;
+        }
+
+        .email-button {
+          display: block !important;
+          padding: 16px 20px !important;
+        }
+      }
+    </style>
+  </head>
+  <body style="margin: 0; padding: 0; background-color: #f7f8fa">
+    <div style="display: none; max-height: 0; overflow: hidden; opacity: 0; color: transparent">
+      Confirm your email to finish creating your Fluent account
+    </div>
+
+    <table
+      border="0"
+      cellpadding="0"
+      cellspacing="0"
+      role="presentation"
+      style="width: 100%; border-collapse: collapse; background-color: #f7f8fa"
+    >
+      <tr>
+        <td align="center" class="email-shell" style="padding: 48px 20px">
+          <table
+            border="0"
+            cellpadding="0"
+            cellspacing="0"
+            role="presentation"
+            style="width: 100%; max-width: 600px; border-collapse: separate"
+          >
+            <tr>
+              <td align="center" style="padding: 0 0 24px">
+                <a
+                  href="{{ .SiteURL }}"
+                  style="
+                    color: #16181d;
+                    font-family: Arial, Helvetica, sans-serif;
+                    font-size: 24px;
+                    font-weight: 700;
+                    letter-spacing: -0.5px;
+                    text-decoration: none;
+                  "
+                  >Fluent</a
+                >
+              </td>
+            </tr>
+            <tr>
+              <td
+                class="email-card"
+                style="
+                  overflow: hidden;
+                  border: 1px solid #e5e7eb;
+                  border-radius: 28px;
+                  background-color: #ffffff;
+                  box-shadow: 0 18px 45px rgba(30, 32, 40, 0.08);
+                "
+              >
+                <div
+                  style="
+                    height: 8px;
+                    background-color: #6d5ef9;
+                    background-image: linear-gradient(90deg, #6d5ef9 0%, #9a7bff 48%, #ff9b5e 100%);
+                  "
+                ></div>
+                <table
+                  border="0"
+                  cellpadding="0"
+                  cellspacing="0"
+                  role="presentation"
+                  style="width: 100%; border-collapse: collapse"
+                >
+                  <tr>
+                    <td class="email-content" style="padding: 48px 48px 42px">
+                      <p
+                        style="
+                          margin: 0 0 14px;
+                          color: #6d5ef9;
+                          font-family: Arial, Helvetica, sans-serif;
+                          font-size: 12px;
+                          font-weight: 700;
+                          letter-spacing: 1.5px;
+                          line-height: 18px;
+                          text-transform: uppercase;
+                        "
+                      >
+                        Welcome to Fluent
+                      </p>
+                      <h1
+                        class="email-title"
+                        style="
+                          margin: 0 0 18px;
+                          color: #16181d;
+                          font-family: Arial, Helvetica, sans-serif;
+                          font-size: 38px;
+                          font-weight: 700;
+                          letter-spacing: -1.2px;
+                          line-height: 44px;
+                        "
+                      >
+                        Confirm your email
+                      </h1>
+                      <p
+                        style="
+                          margin: 0 0 30px;
+                          color: #69707d;
+                          font-family: Arial, Helvetica, sans-serif;
+                          font-size: 17px;
+                          line-height: 27px;
+                        "
+                      >
+                        You're one step away from starting your English journey from A2 to C1.
+                        Confirm your email address to activate your account.
+                      </p>
+
+                      <table
+                        border="0"
+                        cellpadding="0"
+                        cellspacing="0"
+                        role="presentation"
+                        style="width: 100%; border-collapse: collapse"
+                      >
+                        <tr>
+                          <td align="center" style="border-radius: 12px; background-color: #6d5ef9">
+                            <a
+                              class="email-button"
+                              href="{{ .ConfirmationURL }}"
+                              style="
+                                display: inline-block;
+                                width: 100%;
+                                box-sizing: border-box;
+                                padding: 17px 28px;
+                                color: #ffffff;
+                                font-family: Arial, Helvetica, sans-serif;
+                                font-size: 16px;
+                                font-weight: 700;
+                                line-height: 20px;
+                                text-align: center;
+                                text-decoration: none;
+                              "
+                              >Confirm email</a
+                            >
+                          </td>
+                        </tr>
+                      </table>
+
+                      <p
+                        style="
+                          margin: 28px 0 8px;
+                          color: #69707d;
+                          font-family: Arial, Helvetica, sans-serif;
+                          font-size: 13px;
+                          line-height: 20px;
+                        "
+                      >
+                        If the button doesn't work, copy and paste this link into your browser:
+                      </p>
+                      <p
+                        style="
+                          margin: 0;
+                          overflow-wrap: anywhere;
+                          word-break: break-all;
+                          font-family: Arial, Helvetica, sans-serif;
+                          font-size: 12px;
+                          line-height: 19px;
+                        "
+                      >
+                        <a
+                          href="{{ .ConfirmationURL }}"
+                          style="color: #6d5ef9; text-decoration: underline"
+                          >{{ .ConfirmationURL }}</a
+                        >
+                      </p>
+
+                      <div
+                        style="height: 1px; margin: 34px 0 24px; background-color: #e5e7eb"
+                      ></div>
+                      <p
+                        style="
+                          margin: 0;
+                          color: #8a909c;
+                          font-family: Arial, Helvetica, sans-serif;
+                          font-size: 12px;
+                          line-height: 19px;
+                        "
+                      >
+                        If you didn't create a Fluent account, you can safely ignore this email.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td
+                align="center"
+                style="
+                  padding: 24px 20px 0;
+                  color: #8a909c;
+                  font-family: Arial, Helvetica, sans-serif;
+                  font-size: 12px;
+                  line-height: 18px;
+                "
+              >
+                © 2026 Fluent
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
