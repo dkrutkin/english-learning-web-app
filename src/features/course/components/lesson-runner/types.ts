@@ -8,6 +8,10 @@ export type RunnerState = {
   usedHints: string[]
   score: number
   possibleScore: number
+  activeSeconds: number
+  startedAt: string
+  completedAt: string | null
+  revision: number
   result: LessonResult | null
 }
 
@@ -17,4 +21,5 @@ export type RunnerAction =
   | { type: 'hint'; blockId: string }
   | { type: 'retry'; blockId: string }
   | { type: 'next' }
+  | { type: 'activity'; seconds: number }
   | { type: 'complete'; result: LessonResult }

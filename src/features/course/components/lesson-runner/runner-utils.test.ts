@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { mockLessonBlocks } from '../../api/mock-course'
 import { lessonBlocksResponseSchema } from '../../schemas/course'
-import { createInitialRunnerState, lessonRunnerReducer } from './runner-utils'
+import {
+  createInitialRunnerState,
+  hasAnswer,
+  lessonRunnerReducer,
+  requiresAnswer,
+} from './runner-utils'
 
 describe('lesson runner state', () => {
   const blocks = lessonBlocksResponseSchema.parse(mockLessonBlocks)
@@ -17,6 +22,11 @@ describe('lesson runner state', () => {
       usedHints: [block.id],
       score: 0.8,
       possibleScore: 1,
+      completionPercent: 50,
+      activeSeconds: 90,
+      startedAt: '2026-08-21T10:00:00.000Z',
+      completedAt: null,
+      revision: 3,
       updatedAt: new Date().toISOString(),
     })
     expect(state).toMatchObject({
@@ -25,6 +35,8 @@ describe('lesson runner state', () => {
       attempts: { [block.id]: 2 },
       usedHints: [block.id],
       score: 0.8,
+      activeSeconds: 90,
+      revision: 3,
     })
   })
 
@@ -46,5 +58,32 @@ describe('lesson runner state', () => {
       score: 0.8,
       possibleScore: 1,
     })
+  })
+
+  it('requires complete interactive answers including ungraded writing', () => {
+    const writingBlock = {
+      ...block,
+      type: 'writing_prompt' as const,
+      content: { prompt: 'Describe an experience' },
+      isRequired: true,
+      isGraded: false,
+    }
+    const matchingBlock = {
+      ...block,
+      type: 'matching' as const,
+      content: {
+        prompt: 'Match',
+        pairs: [
+          { left: 'one', right: 'first' },
+          { left: 'two', right: 'second' },
+        ],
+      },
+    }
+
+    expect(requiresAnswer(writingBlock)).toBe(true)
+    expect(hasAnswer('', writingBlock)).toBe(false)
+    expect(hasAnswer('My first trip', writingBlock)).toBe(true)
+    expect(hasAnswer({ one: 'first' }, matchingBlock)).toBe(false)
+    expect(hasAnswer({ one: 'first', two: 'second' }, matchingBlock)).toBe(true)
   })
 })

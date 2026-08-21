@@ -1,5 +1,5 @@
-import { Check, Headphones, Mic } from 'lucide-react'
-import type { ComponentType } from 'react'
+import { BookOpen, Check, Headphones, Info, Mic, Sparkles } from 'lucide-react'
+import { useState, type ComponentType } from 'react'
 import type { LessonAnswer, LessonBlock, LessonBlockType } from '../../types/course'
 import { stringList, textValue } from './runner-utils'
 
@@ -19,7 +19,10 @@ function ChoiceExercise({ answer, block, onChange }: ExerciseProps & { multiple?
       {options.map((option) => {
         const isSelected = multiple ? selected.includes(option) : answer === option
         return (
-          <label className={`lesson-option${isSelected ? 'is-selected' : ''}`} key={option}>
+          <label
+            className={isSelected ? 'lesson-option is-selected' : 'lesson-option'}
+            key={option}
+          >
             <input
               checked={isSelected}
               name={block.id}
@@ -68,7 +71,10 @@ function QuizExercise({ answer, block, onChange }: ExerciseProps) {
           {question.options.map((option) => {
             const isSelected = selected[questionIndex] === option
             return (
-              <label className={`lesson-option${isSelected ? 'is-selected' : ''}`} key={option}>
+              <label
+                className={isSelected ? 'lesson-option is-selected' : 'lesson-option'}
+                key={option}
+              >
                 <input
                   checked={isSelected}
                   name={`${block.id}-${questionIndex}`}
@@ -105,18 +111,37 @@ function FillGapExercise({ answer, block, onChange }: ExerciseProps) {
 
 function VocabularyExercise({ block }: ExerciseProps) {
   const items = Array.isArray(block.content.items) ? block.content.items : []
+  const [showTranslations, setShowTranslations] = useState(false)
+  const hasTranslations = items.some(
+    (item) => item && typeof item === 'object' && typeof item.translation === 'string',
+  )
   return (
-    <div className="vocabulary-grid">
-      {items.map((item, index) => {
-        if (!item || typeof item !== 'object') return null
-        return (
-          <article key={`${String(item.term)}-${index}`}>
-            <strong>{String(item.term ?? '')}</strong>
-            <p>{String(item.definition ?? '')}</p>
-            {item.example ? <small>{String(item.example)}</small> : null}
-          </article>
-        )
-      })}
+    <div className="vocabulary-block">
+      {hasTranslations ? (
+        <button
+          aria-pressed={showTranslations}
+          className="button button--secondary vocabulary-translation-toggle"
+          onClick={() => setShowTranslations((visible) => !visible)}
+          type="button"
+        >
+          {showTranslations ? 'Hide translations' : 'Show translations'}
+        </button>
+      ) : null}
+      <div className="vocabulary-grid">
+        {items.map((item, index) => {
+          if (!item || typeof item !== 'object') return null
+          return (
+            <article key={`${String(item.term)}-${index}`}>
+              <strong>{String(item.term ?? '')}</strong>
+              <p>{String(item.definition ?? '')}</p>
+              {showTranslations && item.translation ? (
+                <mark>{String(item.translation)}</mark>
+              ) : null}
+              {item.example ? <small>{String(item.example)}</small> : null}
+            </article>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -136,31 +161,60 @@ function GrammarExercise({ block }: ExerciseProps) {
 }
 
 function ListeningExercise({ block }: ExerciseProps) {
+  const audioUrl = textValue(block.content, 'audioUrl')
   return (
     <div className="listening-card">
       <Headphones aria-hidden="true" />
       <p>{textValue(block.content, 'instructions')}</p>
+      {audioUrl ? <audio controls preload="metadata" src={audioUrl} /> : null}
       {textValue(block.content, 'transcript') ? (
-        <blockquote>{textValue(block.content, 'transcript')}</blockquote>
+        <details>
+          <summary>Show transcript</summary>
+          <blockquote>{textValue(block.content, 'transcript')}</blockquote>
+        </details>
       ) : null}
     </div>
   )
 }
 
 function PromptExercise({ answer, block, onChange }: ExerciseProps) {
+  const value = typeof answer === 'string' ? answer : ''
+  const wordCount = value.trim() ? value.trim().split(/\s+/).length : 0
+  const minWords = typeof block.content.minWords === 'number' ? block.content.minWords : null
+  const suggestedSeconds =
+    typeof block.content.suggestedSeconds === 'number' ? block.content.suggestedSeconds : null
+  const tips = stringList(block.content, 'tips')
   return (
-    <label className="writing-field">
-      {block.type === 'speaking_prompt' ? <Mic aria-hidden="true" /> : null}
-      <span>{textValue(block.content, 'prompt')}</span>
+    <div className="writing-field">
+      <label htmlFor={`${block.id}-response`}>
+        {block.type === 'speaking_prompt' ? <Mic aria-hidden="true" /> : null}
+        <span>{textValue(block.content, 'prompt')}</span>
+      </label>
+      {suggestedSeconds ? <small>Suggested speaking time: {suggestedSeconds} seconds</small> : null}
+      {tips.length ? (
+        <ul>
+          {tips.map((tip) => (
+            <li key={tip}>{tip}</li>
+          ))}
+        </ul>
+      ) : null}
       <textarea
+        id={`${block.id}-response`}
         onChange={(event) => onChange(event.target.value)}
         placeholder={
-          block.type === 'speaking_prompt' ? 'Write speaking notes' : 'Write your response'
+          textValue(block.content, 'placeholder') ||
+          (block.type === 'speaking_prompt' ? 'Write speaking notes' : 'Write your response')
         }
         rows={5}
-        value={typeof answer === 'string' ? answer : ''}
+        value={value}
       />
-    </label>
+      <span aria-live="polite" className="response-counter">
+        {wordCount} words{minWords ? ` · ${Math.max(0, minWords - wordCount)} to minimum` : ''}
+      </span>
+      {value.trim() ? (
+        <small className="practice-save-note">Practice response · no automatic score</small>
+      ) : null}
+    </div>
   )
 }
 
@@ -180,6 +234,7 @@ function MatchingExercise({ answer, block, onChange }: ExerciseProps) {
       ? (answer as Record<string, string>)
       : {}
   const choices = pairs.map((pair) => pair.right)
+  const usedChoices = Object.values(selected)
   return (
     <div className="matching-list">
       <p>{textValue(block.content, 'prompt')}</p>
@@ -192,7 +247,11 @@ function MatchingExercise({ answer, block, onChange }: ExerciseProps) {
           >
             <option value="">Choose a match</option>
             {choices.map((choice) => (
-              <option key={choice} value={choice}>
+              <option
+                disabled={usedChoices.includes(choice) && selected[pair.left] !== choice}
+                key={choice}
+                value={choice}
+              >
                 {choice}
               </option>
             ))}
@@ -206,12 +265,30 @@ function MatchingExercise({ answer, block, onChange }: ExerciseProps) {
 function SentenceBuilderExercise({ answer, block, onChange }: ExerciseProps) {
   const tokens = stringList(block.content, 'tokens')
   const selected = Array.isArray(answer) ? answer : []
+  const available = tokens.filter((token, index) => {
+    const previousOccurrences = tokens.slice(0, index).filter((item) => item === token).length
+    const usedOccurrences = selected.filter((item) => item === token).length
+    return previousOccurrences >= usedOccurrences
+  })
   return (
     <div className="sentence-builder">
       <p>{textValue(block.content, 'prompt')}</p>
-      <div className="sentence-builder__answer">{selected.join(' ') || 'Build your sentence'}</div>
+      <div aria-live="polite" className="sentence-builder__answer">
+        {selected.length
+          ? selected.map((token, index) => (
+              <button
+                aria-label={`Remove ${token}`}
+                key={`${token}-${index}`}
+                onClick={() => onChange(selected.filter((_, itemIndex) => itemIndex !== index))}
+                type="button"
+              >
+                {token}
+              </button>
+            ))
+          : 'Build your sentence'}
+      </div>
       <div className="sentence-builder__tokens">
-        {tokens.map((token, index) => {
+        {available.map((token, index) => {
           const key = `${token}-${index}`
           return (
             <button key={key} onClick={() => onChange([...selected, token])} type="button">
@@ -220,8 +297,8 @@ function SentenceBuilderExercise({ answer, block, onChange }: ExerciseProps) {
           )
         })}
         {selected.length ? (
-          <button onClick={() => onChange(selected.slice(0, -1))} type="button">
-            Undo
+          <button onClick={() => onChange([])} type="button">
+            Clear
           </button>
         ) : null}
       </div>
@@ -230,13 +307,18 @@ function SentenceBuilderExercise({ answer, block, onChange }: ExerciseProps) {
 }
 
 function InformationalExercise({ block }: ExerciseProps) {
+  const Icon = block.type === 'info' ? Info : block.type === 'reading' ? BookOpen : Sparkles
+  const mainText =
+    textValue(block.content, 'body') ||
+    textValue(block.content, 'example') ||
+    textValue(block.content, 'text')
   return (
-    <div className="lesson-body-copy">
-      <p>
-        {textValue(block.content, 'body') ||
-          textValue(block.content, 'example') ||
-          textValue(block.content, 'text')}
-      </p>
+    <div className={`lesson-body-copy lesson-body-copy--${block.type}`}>
+      {['info', 'summary', 'intro', 'reading'].includes(block.type) ? (
+        <Icon aria-hidden="true" />
+      ) : null}
+      <p>{mainText}</p>
+      {textValue(block.content, 'note') ? <small>{textValue(block.content, 'note')}</small> : null}
     </div>
   )
 }

@@ -27,6 +27,8 @@ import {
 
 const mockSessionKey = (userId: string, lessonId: string) =>
   `fluent-course-session:${userId}:${lessonId}`
+export const pendingSessionKey = (userId: string, lessonId: string) =>
+  `fluent-course-pending-session:${userId}:${lessonId}`
 const mockAttemptsKey = (userId: string) => `fluent-course-attempts:${userId}`
 const mockProgressKey = (userId: string) => `fluent-course-progress:${userId}`
 
@@ -41,6 +43,55 @@ function parseStored<T>(key: string, fallback: T): T {
     return value ? (JSON.parse(value) as T) : fallback
   } catch {
     return fallback
+  }
+}
+
+function toSessionRow(session: LessonSession) {
+  return {
+    lesson_id: session.lessonId,
+    current_block_id: session.currentBlockId,
+    draft_answers: session.draftAnswers,
+    attempts: session.attempts,
+    feedback: session.feedback,
+    used_hints: session.usedHints,
+    score: session.score,
+    possible_score: session.possibleScore,
+    completion_percent: session.completionPercent,
+    active_seconds: session.activeSeconds,
+    started_at: session.startedAt,
+    completed_at: session.completedAt,
+    revision: session.revision,
+    updated_at: session.updatedAt,
+  }
+}
+
+export function readPendingLessonSession(userId: string, lessonId: string) {
+  const pending = parseStored<LessonSession | null>(pendingSessionKey(userId, lessonId), null)
+  if (!pending) return null
+  try {
+    return lessonSessionRowSchema.parse(toSessionRow(pending))
+  } catch {
+    window.localStorage.removeItem(pendingSessionKey(userId, lessonId))
+    return null
+  }
+}
+
+export function writePendingLessonSession(userId: string, session: LessonSession) {
+  try {
+    window.localStorage.setItem(
+      pendingSessionKey(userId, session.lessonId),
+      JSON.stringify(session),
+    )
+  } catch {
+    // The network save can still proceed when browser storage is unavailable.
+  }
+}
+
+export function clearPendingLessonSession(userId: string, lessonId: string) {
+  try {
+    window.localStorage.removeItem(pendingSessionKey(userId, lessonId))
+  } catch {
+    // Storage may be disabled by the browser.
   }
 }
 
@@ -76,21 +127,33 @@ export async function getLessonSession(
   context: CourseDataContext,
   lessonId: string,
 ): Promise<LessonSession | null> {
+  const pending = readPendingLessonSession(context.userId, lessonId)
   if (context.isMock) {
     const stored = parseStored<unknown | null>(mockSessionKey(context.userId, lessonId), null)
-    return stored ? lessonSessionRowSchema.parse(stored) : null
+    const serverSession = stored ? lessonSessionRowSchema.parse(stored) : null
+    if (!pending) return serverSession
+    if (!serverSession || pending.revision === serverSession.revision) return pending
+    clearPendingLessonSession(context.userId, lessonId)
+    return serverSession
   }
 
   const { data, error } = await requireSupabase()
     .from('user_lesson_sessions')
     .select(
-      'lesson_id, current_block_id, draft_answers, attempts, feedback, used_hints, score, possible_score, updated_at',
+      'lesson_id, current_block_id, draft_answers, attempts, feedback, used_hints, score, possible_score, completion_percent, active_seconds, started_at, completed_at, revision, updated_at',
     )
     .eq('user_id', context.userId)
     .eq('lesson_id', lessonId)
     .maybeSingle()
-  if (error) throw error
-  return data ? lessonSessionRowSchema.parse(data) : null
+  if (error) {
+    if (pending) return pending
+    throw error
+  }
+  const serverSession = data ? lessonSessionRowSchema.parse(data) : null
+  if (!pending) return serverSession
+  if (!serverSession || pending.revision === serverSession.revision) return pending
+  clearPendingLessonSession(context.userId, lessonId)
+  return serverSession
 }
 
 export async function saveLessonSession(
@@ -107,31 +170,42 @@ export async function saveLessonSession(
     used_hints: session.usedHints,
     score: session.score,
     possible_score: session.possibleScore,
+    completion_percent: session.completionPercent,
+    active_seconds: session.activeSeconds,
+    started_at: session.startedAt,
+    completed_at: session.completedAt,
+    revision: session.revision,
     updated_at: new Date().toISOString(),
   }
   if (context.isMock) {
-    window.localStorage.setItem(mockSessionKey(context.userId, lessonId), JSON.stringify(row))
-    return lessonSessionRowSchema.parse(row)
+    const stored = parseStored<unknown | null>(mockSessionKey(context.userId, lessonId), null)
+    const current = stored ? lessonSessionRowSchema.parse(stored) : null
+    if ((current?.revision ?? 0) !== session.revision) {
+      throw new Error('Session revision conflict')
+    }
+    const saved = { ...row, revision: session.revision + 1 }
+    window.localStorage.setItem(mockSessionKey(context.userId, lessonId), JSON.stringify(saved))
+    clearPendingLessonSession(context.userId, lessonId)
+    return lessonSessionRowSchema.parse(saved)
   }
 
-  const { data, error } = await requireSupabase()
-    .from('user_lesson_sessions')
-    .upsert(
-      {
-        user_id: context.userId,
-        ...row,
-        draft_answers: row.draft_answers as Json,
-        attempts: row.attempts as Json,
-        feedback: row.feedback as Json,
-        used_hints: row.used_hints as Json,
-      },
-      { onConflict: 'user_id,lesson_id' },
-    )
-    .select(
-      'lesson_id, current_block_id, draft_answers, attempts, feedback, used_hints, score, possible_score, updated_at',
-    )
-    .single()
+  const { data, error } = await requireSupabase().rpc('save_lesson_session', {
+    p_lesson_id: lessonId,
+    p_current_block_id: session.currentBlockId,
+    p_draft_answers: session.draftAnswers as Json,
+    p_attempts: session.attempts as Json,
+    p_feedback: session.feedback as Json,
+    p_used_hints: session.usedHints as Json,
+    p_score: session.score,
+    p_possible_score: session.possibleScore,
+    p_completion_percent: session.completionPercent,
+    p_active_seconds: session.activeSeconds,
+    p_started_at: session.startedAt,
+    p_completed_at: session.completedAt,
+    p_expected_revision: session.revision,
+  })
   if (error) throw error
+  clearPendingLessonSession(context.userId, lessonId)
   return lessonSessionRowSchema.parse(data)
 }
 
@@ -143,8 +217,18 @@ function gradeMockAnswer(
 ): AnswerResult {
   const expected = mockAnswerKeys[blockId]
   if (expected === undefined) throw new Error('Mock answer key is missing.')
+  const block = mockLessonBlocks.find((entry) => entry.id === blockId)
+  if (block?.type === 'fill_gap' && typeof expected === 'string' && typeof answer === 'string') {
+    const isCorrect = expected.trim().toLocaleLowerCase() === answer.trim().toLocaleLowerCase()
+    return {
+      isCorrect,
+      score: isCorrect ? (usedHint ? 0.8 : 1) : 0,
+      maxScore: 1,
+      attemptNumber,
+      usedHint,
+    }
+  }
   if (Array.isArray(expected) && Array.isArray(answer)) {
-    const block = mockLessonBlocks.find((entry) => entry.id === blockId)
     const matching = expected.filter((value, index) =>
       block?.type === 'multiple_choice' ? answer.includes(value) : value === answer[index],
     ).length

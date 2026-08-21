@@ -18,9 +18,37 @@ export function hasAnswer(answer: unknown, block: LessonBlock) {
       const questions = Array.isArray(block.content.questions) ? block.content.questions.length : 0
       return questions > 0 && answer.length >= questions && answer.every(Boolean)
     }
+    if (block.type === 'sentence_builder') {
+      const tokens = Array.isArray(block.content.tokens) ? block.content.tokens.length : 0
+      return tokens > 0 && answer.length === tokens
+    }
     return answer.length > 0
   }
-  return Boolean(answer && typeof answer === 'object' && Object.keys(answer).length > 0)
+  if (answer && typeof answer === 'object') {
+    if (block.type === 'matching') {
+      const pairs = Array.isArray(block.content.pairs) ? block.content.pairs.length : 0
+      return pairs > 0 && Object.values(answer).filter(Boolean).length === pairs
+    }
+    return Object.keys(answer).length > 0
+  }
+  return false
+}
+
+const answerBlockTypes = new Set<LessonBlock['type']>([
+  'single_choice',
+  'multiple_choice',
+  'fill_gap',
+  'matching',
+  'sentence_builder',
+  'reading_question',
+  'listening_question',
+  'writing_prompt',
+  'speaking_prompt',
+  'quiz',
+])
+
+export function requiresAnswer(block: LessonBlock) {
+  return block.isRequired && answerBlockTypes.has(block.type)
 }
 
 function totals(feedback: RunnerState['feedback']) {
@@ -46,6 +74,10 @@ export function createInitialRunnerState(
     usedHints: session?.usedHints ?? [],
     score: session?.score ?? 0,
     possibleScore: session?.possibleScore ?? 0,
+    activeSeconds: session?.activeSeconds ?? 0,
+    startedAt: session?.startedAt ?? new Date().toISOString(),
+    completedAt: session?.completedAt ?? null,
+    revision: session?.revision ?? 0,
     result: null,
   }
 }
@@ -81,5 +113,8 @@ export function lessonRunnerReducer(state: RunnerState, action: RunnerAction): R
     return { ...state, feedback, ...totals(feedback) }
   }
   if (action.type === 'next') return { ...state, currentIndex: state.currentIndex + 1 }
+  if (action.type === 'activity') {
+    return { ...state, activeSeconds: state.activeSeconds + action.seconds }
+  }
   return { ...state, result: action.result }
 }

@@ -1370,13 +1370,16 @@ h1 {
   align-items: center;
   gap: 6px;
 }
-.save-status--saving svg {
+.save-status--saving svg,
+.save-status--retrying svg {
   animation: spin 900ms linear infinite;
 }
 .save-status--saved {
   color: var(--success);
 }
-.save-status--error {
+.save-status--offline,
+.save-status--retrying,
+.save-status--conflict {
   color: var(--danger);
 }
 @keyframes spin {
@@ -1483,6 +1486,10 @@ h1 {
 .lesson-option.is-selected {
   border-color: var(--accent);
 }
+.lesson-option:focus-within {
+  border-color: var(--accent);
+  outline: 3px solid color-mix(in srgb, var(--accent) 18%, transparent);
+}
 .lesson-option.is-selected {
   background: var(--accent-subtle);
 }
@@ -1522,6 +1529,27 @@ h1 {
   font-size: 20px;
   font-weight: 650;
   line-height: 1.45;
+}
+.writing-field > label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.writing-field > small,
+.writing-field li,
+.response-counter {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 450;
+}
+.writing-field ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+}
+.response-counter {
+  justify-self: end;
 }
 .fill-gap-field input,
 .writing-field textarea {
@@ -1564,6 +1592,27 @@ h1 {
   color: var(--text-muted);
   line-height: 1.5;
 }
+.vocabulary-block {
+  margin: 30px 0;
+}
+.vocabulary-block .vocabulary-grid {
+  margin-bottom: 0;
+}
+.vocabulary-translation-toggle {
+  min-height: 44px;
+}
+.vocabulary-grid article {
+  display: grid;
+  align-content: start;
+}
+.vocabulary-grid mark {
+  width: fit-content;
+  margin-bottom: 12px;
+  border-radius: 7px;
+  padding: 4px 8px;
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
 .grammar-card {
   display: grid;
   gap: 14px;
@@ -1600,6 +1649,47 @@ h1 {
   padding-left: 18px;
   line-height: 1.75;
 }
+.listening-card audio {
+  width: 100%;
+  margin: 4px 0 18px;
+}
+.listening-card details {
+  color: var(--text-muted);
+}
+.listening-card summary {
+  min-height: 44px;
+  cursor: pointer;
+  line-height: 44px;
+}
+.lesson-body-copy[class*='lesson-body-copy--'] {
+  display: grid;
+  gap: 14px;
+  max-width: none;
+  margin: 30px 0;
+}
+.lesson-body-copy--intro,
+.lesson-body-copy--info,
+.lesson-body-copy--summary,
+.lesson-body-copy--reading {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px;
+  background: var(--background);
+}
+.lesson-body-copy--info,
+.lesson-body-copy--summary {
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--border));
+  background: var(--accent-subtle);
+}
+.lesson-body-copy[class*='lesson-body-copy--'] > svg {
+  color: var(--accent);
+}
+.lesson-body-copy[class*='lesson-body-copy--'] p {
+  margin: 0;
+}
+.lesson-body-copy[class*='lesson-body-copy--'] small {
+  color: var(--text-muted);
+}
 .answer-feedback {
   display: flex;
   align-items: center;
@@ -1627,6 +1717,18 @@ h1 {
   margin: 20px 0;
   color: var(--danger);
   text-align: center;
+}
+.lesson-sync-conflict {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 20px 0;
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--border));
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  color: var(--danger);
 }
 .lesson-footer {
   display: grid;
@@ -1685,12 +1787,33 @@ h1 {
   background: var(--background);
   color: var(--text);
 }
+.matching-list select:focus-visible,
+.sentence-builder button:focus-visible,
+.vocabulary-translation-toggle:focus-visible,
+.listening-card summary:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  outline-offset: 2px;
+}
+.sentence-builder__answer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sentence-builder__answer button {
+  border: 0;
+  border-radius: 8px;
+  padding: 6px 9px;
+  background: var(--accent-subtle);
+  color: var(--accent);
+  cursor: pointer;
+}
 .sentence-builder__tokens {
   display: flex;
   flex-wrap: wrap;
   gap: 9px;
 }
 .sentence-builder__tokens button {
+  min-height: 44px;
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 10px 13px;
@@ -1989,6 +2112,11 @@ h1 {
   .lesson-header__stats {
     gap: 10px;
   }
+  .save-status {
+    max-width: 210px;
+    justify-content: flex-end;
+    text-align: right;
+  }
   .lesson-score {
     display: none;
   }
@@ -1999,6 +2127,10 @@ h1 {
   .lesson-footer__actions .button,
   .lesson-footer__actions > span {
     width: 100%;
+  }
+  .lesson-sync-conflict {
+    align-items: stretch;
+    flex-direction: column;
   }
   .matching-list label {
     grid-template-columns: 1fr;

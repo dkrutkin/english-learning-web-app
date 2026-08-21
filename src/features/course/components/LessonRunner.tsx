@@ -2,9 +2,9 @@ import { useEffect, useMemo, useReducer } from 'react'
 import {
   useCompleteLesson,
   useLessonSession,
-  useSaveLessonSession,
   useSubmitLessonAnswer,
 } from '../hooks/use-lesson-runner'
+import { useLessonAutosave } from '../hooks/use-lesson-autosave'
 import type { CourseLesson, LessonAnswer, LessonBlock, LessonSession } from '../types/course'
 import { ExerciseRenderer } from './lesson-runner/ExerciseRenderer'
 import { FeedbackPanel } from './lesson-runner/FeedbackPanel'
@@ -17,6 +17,7 @@ import {
   hasAnswer,
   lessonRunnerReducer,
   MAX_ATTEMPTS,
+  requiresAnswer,
   textValue,
 } from './lesson-runner/runner-utils'
 
@@ -34,14 +35,12 @@ function LessonRunnerExperience({
   levelSlug,
   moduleSlug,
 }: RunnerProps & { initialSession: LessonSession | null }) {
-  const saveSession = useSaveLessonSession(lesson.id)
   const submitAnswer = useSubmitLessonAnswer(lesson.id)
   const complete = useCompleteLesson(lesson.id)
   const [state, dispatch] = useReducer(
     lessonRunnerReducer,
     createInitialRunnerState(blocks, initialSession),
   )
-  const saveSessionMutation = saveSession.mutate
   const block = blocks[state.currentIndex]
   const answer = state.answers[block.id]
   const blockFeedback = state.feedback[block.id]
@@ -59,22 +58,38 @@ function LessonRunnerExperience({
       usedHints: state.usedHints,
       score: state.score,
       possibleScore: state.possibleScore,
+      completionPercent: Math.round((state.currentIndex / blocks.length) * 100),
+      activeSeconds: state.activeSeconds,
+      startedAt: state.startedAt,
+      completedAt: state.completedAt,
+      revision: state.revision,
     }),
     [
       block.id,
+      blocks.length,
+      state.activeSeconds,
       state.answers,
       state.attempts,
+      state.completedAt,
+      state.currentIndex,
       state.feedback,
       state.possibleScore,
+      state.revision,
       state.score,
+      state.startedAt,
       state.usedHints,
     ],
   )
+  const autosave = useLessonAutosave(lesson.id, sessionSnapshot)
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => saveSessionMutation(sessionSnapshot), 500)
-    return () => window.clearTimeout(timeout)
-  }, [saveSessionMutation, sessionSnapshot])
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        dispatch({ type: 'activity', seconds: 5 })
+      }
+    }, 5_000)
+    return () => window.clearInterval(interval)
+  }, [])
 
   const updateAnswer = (nextAnswer: LessonAnswer) => {
     dispatch({ type: 'answer', blockId: block.id, answer: nextAnswer })
@@ -95,7 +110,12 @@ function LessonRunnerExperience({
       return
     }
     if (isLast) {
-      dispatch({ type: 'complete', result: await complete.mutateAsync() })
+      const result = await complete.mutateAsync()
+      await autosave.flush({
+        completionPercent: 100,
+        completedAt: new Date().toISOString(),
+      })
+      dispatch({ type: 'complete', result })
       return
     }
     dispatch({ type: 'next' })
@@ -108,7 +128,7 @@ function LessonRunnerExperience({
   const actionDisabled =
     submitAnswer.isPending ||
     complete.isPending ||
-    (block.isGraded && !blockFeedback && !hasAnswer(answer, block))
+    (!blockFeedback && requiresAnswer(block) && !hasAnswer(answer, block))
   const primaryLabel =
     blockFeedback && !blockFeedback.isCorrect && attemptCount < MAX_ATTEMPTS
       ? 'Try again'
@@ -117,14 +137,12 @@ function LessonRunnerExperience({
         : isLast
           ? 'Finish lesson'
           : 'Continue'
-  const saveStatus = saveSession.isError ? 'error' : saveSession.isPending ? 'saving' : 'saved'
-
   return (
     <>
       <LessonHeader
         exitTo={`/app/learn/${levelSlug}/${moduleSlug}`}
         possibleScore={state.possibleScore}
-        saveStatus={saveStatus}
+        saveStatus={autosave.status}
         score={state.score}
       />
       <LessonProgress current={state.currentIndex + 1} total={blocks.length} />
@@ -135,6 +153,18 @@ function LessonRunnerExperience({
         {blockFeedback ? <FeedbackPanel feedback={blockFeedback} /> : null}
         {(submitAnswer.isError || complete.isError) && (
           <p className="lesson-runner-error">We could not process this step. Try again.</p>
+        )}
+        {autosave.status === 'conflict' && (
+          <div className="lesson-sync-conflict" role="alert">
+            <span>Newer progress was found on another device</span>
+            <button
+              className="button button--secondary"
+              onClick={() => window.location.reload()}
+              type="button"
+            >
+              Reload progress
+            </button>
+          </div>
         )}
         <LessonFooter
           canUseHint={Boolean(hint) && !hintVisible && block.isGraded && !blockFeedback}

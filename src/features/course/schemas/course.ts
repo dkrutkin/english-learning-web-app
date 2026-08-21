@@ -112,43 +112,96 @@ export const lessonRowSchema = z
     version: row.version,
   }))
 
-const genericBlockContentSchema = z.record(z.string(), z.unknown())
-const bodyContentSchema = z.object({ body: z.string().min(1) }).passthrough()
+const hintSchema = z.string().min(1).optional()
+const bodyContentSchema = z
+  .object({ body: z.string().min(1), label: z.string().min(1).optional() })
+  .passthrough()
 const grammarContentSchema = z
   .object({
     explanation: z.string().min(1),
     formula: z.string().optional(),
-    examples: z.array(z.string()).optional(),
+    examples: z.array(z.string().min(1)).min(1).optional(),
+    note: z.string().min(1).optional(),
   })
   .passthrough()
 const vocabularyContentSchema = z
   .object({
-    items: z.array(
-      z.object({
-        term: z.string().min(1),
-        definition: z.string().min(1),
-        example: z.string().optional(),
-        translation: z.string().optional(),
-      }),
-    ),
+    items: z
+      .array(
+        z.object({
+          term: z.string().min(1),
+          definition: z.string().min(1),
+          example: z.string().min(1).optional(),
+          translation: z.string().min(1).optional(),
+        }),
+      )
+      .min(1),
   })
   .passthrough()
 const exampleContentSchema = z
   .object({ example: z.string().min(1), note: z.string().optional() })
   .passthrough()
-const exerciseContentSchema = z
+const choiceContentSchema = z
   .object({
     prompt: z.string().min(1),
-    options: z.array(z.string()).optional(),
+    options: z.array(z.string().min(1)).min(2),
+    hint: hintSchema,
+  })
+  .passthrough()
+const fillGapContentSchema = z
+  .object({
+    prompt: z.string().min(1),
+    placeholder: z.string().min(1).optional(),
+    hint: hintSchema,
+  })
+  .passthrough()
+const matchingContentSchema = z
+  .object({
+    prompt: z.string().min(1),
+    pairs: z
+      .array(
+        z.object({
+          left: z.string().min(1),
+          right: z.string().min(1),
+        }),
+      )
+      .min(2),
+    hint: hintSchema,
+  })
+  .passthrough()
+const sentenceBuilderContentSchema = z
+  .object({
+    prompt: z.string().min(1),
+    tokens: z.array(z.string().min(1)).min(2),
+    hint: hintSchema,
+  })
+  .passthrough()
+const writingContentSchema = z
+  .object({
+    prompt: z.string().min(1),
+    placeholder: z.string().min(1).optional(),
+    minWords: z.number().int().positive().optional(),
+    example: z.string().min(1).optional(),
+  })
+  .passthrough()
+const speakingContentSchema = z
+  .object({
+    prompt: z.string().min(1),
+    placeholder: z.string().min(1).optional(),
+    suggestedSeconds: z.number().int().positive().optional(),
+    tips: z.array(z.string().min(1)).optional(),
   })
   .passthrough()
 const listeningContentSchema = z
   .object({
-    transcript: z.string().min(1),
-    instructions: z.string().optional(),
+    transcript: z.string().min(1).optional(),
+    instructions: z.string().min(1).optional(),
     audioUrl: z.string().url().optional(),
   })
   .passthrough()
+  .refine((content) => Boolean(content.transcript || content.audioUrl), {
+    message: 'A transcript or audioUrl is required',
+  })
 const quizContentSchema = z
   .object({
     prompt: z.string().min(1),
@@ -163,8 +216,9 @@ const quizContentSchema = z
   })
   .passthrough()
 
-const blockContentSchemas: Partial<
-  Record<z.infer<typeof lessonBlockTypeSchema>, z.ZodType<Record<string, unknown>>>
+const blockContentSchemas: Record<
+  z.infer<typeof lessonBlockTypeSchema>,
+  z.ZodType<Record<string, unknown>>
 > = {
   intro: bodyContentSchema,
   text: bodyContentSchema,
@@ -175,15 +229,15 @@ const blockContentSchemas: Partial<
   grammar: grammarContentSchema,
   vocabulary: vocabularyContentSchema,
   example: exampleContentSchema,
-  single_choice: exerciseContentSchema,
-  multiple_choice: exerciseContentSchema,
-  fill_gap: exerciseContentSchema,
-  matching: exerciseContentSchema,
-  sentence_builder: exerciseContentSchema,
-  reading_question: exerciseContentSchema,
-  listening_question: exerciseContentSchema,
-  writing_prompt: exerciseContentSchema,
-  speaking_prompt: exerciseContentSchema,
+  single_choice: choiceContentSchema,
+  multiple_choice: choiceContentSchema,
+  fill_gap: fillGapContentSchema,
+  matching: matchingContentSchema,
+  sentence_builder: sentenceBuilderContentSchema,
+  reading_question: choiceContentSchema,
+  listening_question: choiceContentSchema,
+  writing_prompt: writingContentSchema,
+  speaking_prompt: speakingContentSchema,
   quiz: quizContentSchema,
 }
 
@@ -199,7 +253,7 @@ export const lessonBlockRowSchema = z
     is_graded: z.boolean(),
   })
   .transform((row, context) => {
-    const contentSchema = blockContentSchemas[row.type] ?? genericBlockContentSchema
+    const contentSchema = blockContentSchemas[row.type]
     const parsedContent = contentSchema.safeParse(row.content)
     if (!parsedContent.success) {
       parsedContent.error.issues.forEach((issue) =>
@@ -301,6 +355,11 @@ export const lessonSessionRowSchema = z
     used_hints: z.array(z.string().uuid()).default([]),
     score: z.coerce.number().nonnegative().default(0),
     possible_score: z.coerce.number().nonnegative().default(0),
+    completion_percent: z.coerce.number().min(0).max(100).default(0),
+    active_seconds: z.number().int().nonnegative().default(0),
+    started_at: z.string().datetime().nullable().default(null),
+    completed_at: z.string().datetime().nullable().default(null),
+    revision: z.number().int().nonnegative().default(0),
     updated_at: z.string().datetime(),
   })
   .transform((row) => ({
@@ -312,6 +371,11 @@ export const lessonSessionRowSchema = z
     usedHints: row.used_hints,
     score: row.score,
     possibleScore: row.possible_score,
+    completionPercent: row.completion_percent,
+    activeSeconds: row.active_seconds,
+    startedAt: row.started_at ?? row.updated_at,
+    completedAt: row.completed_at,
+    revision: row.revision,
     updatedAt: row.updated_at,
   }))
 

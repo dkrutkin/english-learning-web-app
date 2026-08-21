@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import type { LessonSaveStatus } from '../../hooks/use-lesson-autosave'
 import { ProgressSaveStatus } from './ProgressSaveStatus'
 
 export function LessonHeader({
@@ -9,7 +10,7 @@ export function LessonHeader({
 }: {
   exitTo: string
   possibleScore: number
-  saveStatus: 'saving' | 'saved' | 'error'
+  saveStatus: LessonSaveStatus
   score: number
 }) {
   return (

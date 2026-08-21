@@ -193,6 +193,11 @@ export type Database = {
           used_hints: Json
           score: number
           possible_score: number
+          completion_percent: number
+          active_seconds: number
+          started_at: string
+          completed_at: string | null
+          revision: number
           updated_at: string
         }
         Insert: Partial<Database['public']['Tables']['user_lesson_sessions']['Row']> & {
@@ -241,6 +246,24 @@ export type Database = {
           p_block_id: string
           p_answer: Json
           p_used_hint: boolean
+        }
+        Returns: Json
+      }
+      save_lesson_session: {
+        Args: {
+          p_lesson_id: string
+          p_current_block_id: string | null
+          p_draft_answers: Json
+          p_attempts: Json
+          p_feedback: Json
+          p_used_hints: Json
+          p_score: number
+          p_possible_score: number
+          p_completion_percent: number
+          p_active_seconds: number
+          p_started_at: string
+          p_completed_at: string | null
+          p_expected_revision: number
         }
         Returns: Json
       }

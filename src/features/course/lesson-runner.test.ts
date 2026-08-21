@@ -4,6 +4,7 @@ import {
   getLessonSession,
   saveLessonSession,
   submitLessonAnswer,
+  writePendingLessonSession,
 } from './api/lesson-runner-api'
 import { mockLessonBlocks, mockLessons } from './api/mock-course'
 import { lessonBlocksResponseSchema } from './schemas/course'
@@ -28,6 +29,11 @@ describe('lesson runner', () => {
       usedHints: [block.id],
       score: 0,
       possibleScore: 1,
+      completionPercent: 25,
+      activeSeconds: 45,
+      startedAt: '2026-08-21T10:00:00.000Z',
+      completedAt: null,
+      revision: 0,
     })
 
     await expect(getLessonSession(context, lesson.id)).resolves.toMatchObject({
@@ -35,6 +41,60 @@ describe('lesson runner', () => {
       draftAnswers: { [block.id]: 'draft answer' },
       attempts: { [block.id]: 1 },
       usedHints: [block.id],
+      completionPercent: 25,
+      activeSeconds: 45,
+      revision: 1,
+    })
+  })
+
+  it('prevents an older device revision from overwriting newer progress', async () => {
+    const lesson = mockLessons[3]
+    const block = mockLessonBlocks.find((entry) => entry.lesson_id === lesson.id)!
+    const base = {
+      currentBlockId: block.id,
+      draftAnswers: {},
+      attempts: {},
+      feedback: {},
+      usedHints: [],
+      score: 0,
+      possibleScore: 0,
+      completionPercent: 0,
+      activeSeconds: 0,
+      startedAt: '2026-08-21T10:00:00.000Z',
+      completedAt: null,
+      revision: 0,
+    }
+    await saveLessonSession(context, lesson.id, base)
+    await expect(saveLessonSession(context, lesson.id, base)).rejects.toThrow(
+      'Session revision conflict',
+    )
+  })
+
+  it('restores a locally queued session when the network save is unavailable', async () => {
+    const lesson = mockLessons[3]
+    const block = mockLessonBlocks.find((entry) => entry.lesson_id === lesson.id)!
+    writePendingLessonSession(context.userId, {
+      lessonId: lesson.id,
+      currentBlockId: block.id,
+      draftAnswers: { [block.id]: 'offline answer' },
+      attempts: {},
+      feedback: {},
+      usedHints: [],
+      score: 0,
+      possibleScore: 0,
+      completionPercent: 25,
+      activeSeconds: 75,
+      startedAt: '2026-08-21T10:00:00.000Z',
+      completedAt: null,
+      revision: 0,
+      updatedAt: '2026-08-21T10:01:15.000Z',
+    })
+
+    await expect(getLessonSession(context, lesson.id)).resolves.toMatchObject({
+      currentBlockId: block.id,
+      draftAnswers: { [block.id]: 'offline answer' },
+      completionPercent: 25,
+      activeSeconds: 75,
     })
   })
 
@@ -76,6 +136,16 @@ describe('lesson runner', () => {
     await expect(completeLesson(context, lesson.id)).resolves.toMatchObject({
       accuracyPercent: 80,
     })
+  })
+
+  it('normalizes capitalization and spaces in fill gap answers', async () => {
+    const lesson = mockLessons[4]
+    const block = mockLessonBlocks.find(
+      (entry) => entry.lesson_id === lesson.id && entry.type === 'fill_gap',
+    )!
+    await expect(
+      submitLessonAnswer(context, lesson.id, block.id, '  HAS  '),
+    ).resolves.toMatchObject({ isCorrect: true, score: 1, attemptNumber: 1 })
   })
 
   it('completes the full module and unlocks the module achievement', async () => {
