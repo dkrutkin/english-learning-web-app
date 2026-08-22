@@ -13,7 +13,7 @@ export const courseKeys = {
     [...courseKeys.lessons(source, levelSlug, moduleSlug), lessonSlug] as const,
   blocks: (source: 'mock' | 'remote', levelSlug: string, moduleSlug: string, lessonSlug: string) =>
     [...courseKeys.lesson(source, levelSlug, moduleSlug, lessonSlug), 'blocks'] as const,
-  progress: (userId: string) => [...courseKeys.all, 'progress', userId] as const,
+  progressSummary: (userId: string) => [...courseKeys.all, 'progress-summary', userId] as const,
   recommended: (userId: string) => [...courseKeys.all, 'recommended', userId] as const,
   session: (userId: string, lessonId: string) =>
     [...courseKeys.all, 'session', userId, lessonId] as const,

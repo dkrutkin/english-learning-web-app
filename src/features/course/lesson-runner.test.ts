@@ -6,7 +6,7 @@ import {
   submitLessonAnswer,
   writePendingLessonSession,
 } from './api/lesson-runner-api'
-import { mockLessonBlocks, mockLessons } from './api/mock-course'
+import { mockAnswerKeys, mockLessonBlocks, mockLessons, mockModules } from './api/mock-course'
 import { lessonBlocksResponseSchema } from './schemas/course'
 
 const context = { userId: '00000000-0000-4000-8000-000000000001', isMock: true }
@@ -15,7 +15,7 @@ describe('lesson runner', () => {
   beforeEach(() => window.localStorage.clear())
 
   it('validates every block in the vertical module', () => {
-    expect(lessonBlocksResponseSchema.parse(mockLessonBlocks)).toHaveLength(13)
+    expect(lessonBlocksResponseSchema.parse(mockLessonBlocks)).toHaveLength(15)
   })
 
   it('autosaves and restores the current block and draft answers', async () => {
@@ -109,9 +109,16 @@ describe('lesson runner', () => {
 
     await expect(completeLesson(context, lesson.id)).resolves.toMatchObject({
       lessonCompleted: true,
+      lessonKind: 'lesson',
+      score: 1,
+      possibleScore: 1,
       moduleCompleted: false,
       moduleCompletionPercent: 20,
       accuracyPercent: 100,
+      nextLesson: {
+        slug: 'present-perfect-essentials',
+        title: 'Present perfect essentials',
+      },
       unlockedAchievements: ['first-step'],
     })
   })
@@ -180,11 +187,55 @@ describe('lesson runner', () => {
       const result = await completeLesson(context, lesson.id)
       if (lessonIndex === 4) {
         expect(result).toMatchObject({
+          lessonKind: 'module_assessment',
           moduleCompleted: true,
+          moduleMastered: true,
           moduleCompletionPercent: 100,
+          moduleAssessmentScore: 100,
+          moduleStatus: 'mastered',
+          moduleSealAwarded: true,
+          nextLesson: { slug: 'level-assessment', title: 'B1 level assessment' },
+          nextModule: { slug: 'work-and-opinions', title: 'Work and opinions' },
           unlockedAchievements: ['first-step', 'first-module'],
         })
       }
     }
+
+    const progressKey = `fluent-course-progress:${context.userId}`
+    const stored = JSON.parse(window.localStorage.getItem(progressKey) ?? '{}') as {
+      modules: Array<Record<string, unknown>>
+    }
+    stored.modules = stored.modules.map((entry) =>
+      entry.module_id === mockModules[3].id
+        ? {
+            ...entry,
+            completion_percent: 100,
+            average_accuracy: 90,
+            assessment_score: 90,
+            status: 'mastered',
+          }
+        : entry,
+    )
+    window.localStorage.setItem(progressKey, JSON.stringify(stored))
+
+    const assessment = mockLessons.find((lesson) => lesson.slug === 'level-assessment')!
+    const assessmentBlock = mockLessonBlocks.find(
+      (block) => block.lesson_id === assessment.id && block.is_graded,
+    )!
+    await submitLessonAnswer(
+      context,
+      assessment.id,
+      assessmentBlock.id,
+      mockAnswerKeys[assessmentBlock.id],
+    )
+    await expect(completeLesson(context, assessment.id)).resolves.toMatchObject({
+      lessonKind: 'level_assessment',
+      levelCompleted: true,
+      levelMastered: true,
+      levelAssessmentScore: 100,
+      levelStatus: 'mastered',
+      levelEmblemAwarded: true,
+      unlockedAchievements: ['first-step', 'first-module', 'level-complete'],
+    })
   })
 })

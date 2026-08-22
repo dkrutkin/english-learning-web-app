@@ -74,30 +74,46 @@ export function LessonCard({
   lesson,
   levelSlug,
   moduleSlug,
+  locked = false,
 }: {
   lesson: LessonWithProgress
   levelSlug: string
   moduleSlug: string
+  locked?: boolean
 }) {
-  return (
-    <Link to={`/app/lesson/${levelSlug}/${moduleSlug}/${lesson.slug}`}>
-      <article className="lesson-card">
-        <span className="lesson-card__number">{lesson.orderIndex}</span>
-        <div>
-          <div className="course-card__meta">
-            <span>{progressLabels[lesson.progress.status]}</span>
-            <span>
-              <Clock3 size={14} /> {formatMinutes(lesson.estimatedMinutes)}
-            </span>
-          </div>
-          <h2>{lesson.title}</h2>
-          <p>{lesson.description}</p>
-          <div className="progress-line">
-            <span style={{ width: `${lesson.progress.completionPercent}%` }} />
-          </div>
+  const content = (
+    <article className={`lesson-card${locked ? 'is-locked' : ''}`}>
+      <span className="lesson-card__number">
+        {locked ? <LockKeyhole aria-label="Locked" size={16} /> : lesson.orderIndex}
+      </span>
+      <div>
+        <div className="course-card__meta">
+          <span>
+            {lesson.slug === 'level-assessment'
+              ? locked
+                ? 'Complete all modules first'
+                : 'Level assessment'
+              : lesson.slug === 'module-review'
+                ? 'Module review'
+                : progressLabels[lesson.progress.status]}
+          </span>
+          <span>
+            <Clock3 size={14} /> {formatMinutes(lesson.estimatedMinutes)}
+          </span>
         </div>
-        <ArrowRight aria-hidden="true" size={20} />
-      </article>
-    </Link>
+        <h2>{lesson.title}</h2>
+        <p>{lesson.description}</p>
+        <div className="progress-line">
+          <span style={{ width: `${lesson.progress.completionPercent}%` }} />
+        </div>
+      </div>
+      {!locked ? <ArrowRight aria-hidden="true" size={20} /> : null}
+    </article>
+  )
+
+  return locked ? (
+    content
+  ) : (
+    <Link to={`/app/lesson/${levelSlug}/${moduleSlug}/${lesson.slug}`}>{content}</Link>
   )
 }

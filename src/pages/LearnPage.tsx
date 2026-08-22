@@ -116,18 +116,32 @@ function LevelOverview({ levelSlug }: { levelSlug: string }) {
 function ModuleOverview({ levelSlug, moduleSlug }: { levelSlug: string; moduleSlug: string }) {
   const level = useCourseLevel(levelSlug)
   const module = useCourseModule(levelSlug, moduleSlug)
+  const levelModules = useLevelModules(levelSlug)
   const lessons = useModuleLessons(levelSlug, moduleSlug)
   const progress = useCourseProgress()
-  if (level.isPending || module.isPending || lessons.isPending || progress.isPending) {
+  if (
+    level.isPending ||
+    module.isPending ||
+    levelModules.isPending ||
+    lessons.isPending ||
+    progress.isPending
+  ) {
     return <CourseLoadingState cards={3} />
   }
-  if (level.isError || module.isError || lessons.isError || progress.isError) {
+  if (
+    level.isError ||
+    module.isError ||
+    levelModules.isError ||
+    lessons.isError ||
+    progress.isError
+  ) {
     return (
       <CourseErrorState
         onRetry={() =>
           void Promise.all([
             level.refetch(),
             module.refetch(),
+            levelModules.refetch(),
             lessons.refetch(),
             progress.refetch(),
           ])
@@ -150,6 +164,14 @@ function ModuleOverview({ levelSlug, moduleSlug }: { levelSlug: string; moduleSl
   }
 
   const lessonProgress = new Map(progress.data.lessons.map((entry) => [entry.entityId, entry]))
+  const moduleProgress = new Map(progress.data.modules.map((entry) => [entry.entityId, entry]))
+  const requiredModules = levelModules.data.filter((entry) => entry.isRequired)
+  const levelCourseworkComplete =
+    requiredModules.length > 0 &&
+    requiredModules.every((entry) => {
+      const status = moduleProgress.get(entry.id)?.status
+      return status === 'completed' || status === 'mastered'
+    })
   const courseLessons = lessons.data.map((lesson) => ({
     ...lesson,
     progress: lessonProgress.get(lesson.id) ?? defaultLessonProgress(lesson.id),
@@ -188,6 +210,7 @@ function ModuleOverview({ levelSlug, moduleSlug }: { levelSlug: string; moduleSl
               key={lesson.id}
               lesson={lesson}
               levelSlug={levelSlug}
+              locked={lesson.slug === 'level-assessment' && !levelCourseworkComplete}
               moduleSlug={moduleSlug}
             />
           ))}

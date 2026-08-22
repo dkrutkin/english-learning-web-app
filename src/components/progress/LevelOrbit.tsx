@@ -4,12 +4,17 @@ export function LevelOrbit({
   level = 'B1',
   completed = 4,
   total = 10,
+  progress: explicitProgress,
 }: {
   level?: string
   completed?: number
   total?: number
+  progress?: number
 }) {
-  const progress = Math.round((completed / total) * 100)
+  const progress = Math.max(
+    0,
+    Math.min(100, Math.round(explicitProgress ?? (total > 0 ? (completed / total) * 100 : 0))),
+  )
   return (
     <div
       aria-label={`${level} level, ${progress}% complete`}

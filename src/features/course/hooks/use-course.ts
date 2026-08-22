@@ -9,8 +9,8 @@ import {
   getLevelModules,
   getModuleLessons,
   getRecommendedLesson,
-  getUserCourseProgress,
 } from '../api/course-api'
+import { getProgressSummary } from '../api/progress-summary-api'
 import { courseKeys } from './query-keys'
 
 const courseQueryOptions = { staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
@@ -97,8 +97,19 @@ export function useLessonBlocks(levelSlug: string, moduleSlug: string, lessonSlu
 export function useCourseProgress() {
   const { context, isAuthenticated } = useCourseContext()
   return useQuery({
-    queryKey: courseKeys.progress(context.userId),
-    queryFn: () => getUserCourseProgress(context),
+    queryKey: courseKeys.progressSummary(context.userId),
+    queryFn: () => getProgressSummary(context),
+    select: (summary) => summary.courseProgress,
+    enabled: isAuthenticated,
+    ...courseQueryOptions,
+  })
+}
+
+export function useProgressSummary() {
+  const { context, isAuthenticated } = useCourseContext()
+  return useQuery({
+    queryKey: courseKeys.progressSummary(context.userId),
+    queryFn: () => getProgressSummary(context),
     enabled: isAuthenticated,
     ...courseQueryOptions,
   })

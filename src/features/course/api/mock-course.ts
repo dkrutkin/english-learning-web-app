@@ -178,6 +178,19 @@ export const mockLessons = [
     version: 1,
   },
   {
+    id: '30000000-0000-4000-8000-000000000010',
+    module_id: mockModules[2].id,
+    slug: 'level-assessment',
+    title: 'B1 level assessment',
+    description:
+      'Check the core vocabulary, grammar, reading and listening skills from this level.',
+    order_index: 6,
+    estimated_minutes: 30,
+    is_required: false,
+    status: 'published',
+    version: 1,
+  },
+  {
     id: '30000000-0000-4000-8000-000000000009',
     module_id: mockModules[3].id,
     slug: 'sharing-opinions',
@@ -401,6 +414,61 @@ export const mockLessonBlocks = [
     is_required: true,
     is_graded: true,
   },
+  {
+    id: '40000000-0000-4000-8000-000000000061',
+    lesson_id: mockLessons[8].id,
+    type: 'intro',
+    title: 'Your B1 checkpoint',
+    content: {
+      body: 'Complete this assessment to finish the published B1 learning path. You need 85% for mastery.',
+    },
+    order_index: 1,
+    is_required: true,
+    is_graded: false,
+  },
+  {
+    id: '40000000-0000-4000-8000-000000000062',
+    lesson_id: mockLessons[8].id,
+    type: 'quiz',
+    title: 'B1 level assessment',
+    content: {
+      prompt: 'Choose one answer for every question.',
+      questions: [
+        {
+          prompt: 'Which word describes something worth remembering?',
+          options: ['memorable', 'ordinary', 'temporary'],
+        },
+        { prompt: 'Complete: She ___ never tried surfing.', options: ['has', 'have', 'is'] },
+        {
+          prompt: 'Which sentence connects an experience to the present?',
+          options: [
+            'I have visited Rome twice.',
+            'I visit Rome yesterday.',
+            'I am visit Rome twice.',
+          ],
+        },
+        {
+          prompt: 'What helped Nina after the first week?',
+          options: [
+            'Speaking English became easier.',
+            'She stopped speaking English.',
+            'She changed her job.',
+          ],
+        },
+        {
+          prompt: 'Which response clearly expresses an experience?',
+          options: [
+            'It was challenging, but I learned a lot.',
+            'Experience is thing.',
+            'Yesterday tomorrow travel.',
+          ],
+        },
+      ],
+    },
+    order_index: 2,
+    is_required: true,
+    is_graded: true,
+  },
 ] as const
 
 export const mockAnswerKeys: Record<string, string | string[]> = {
@@ -418,6 +486,13 @@ export const mockAnswerKeys: Record<string, string | string[]> = {
     'More independent',
     'Speaking English',
     'She has never tried surfing.',
+  ],
+  '40000000-0000-4000-8000-000000000062': [
+    'memorable',
+    'has',
+    'I have visited Rome twice.',
+    'Speaking English became easier.',
+    'It was challenging, but I learned a lot.',
   ],
 }
 

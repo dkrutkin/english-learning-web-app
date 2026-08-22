@@ -389,8 +389,145 @@ export const answerResultSchema = z.object({
 
 export const lessonResultSchema = z.object({
   lessonCompleted: z.literal(true),
+  lessonKind: z.enum(['lesson', 'module_assessment', 'level_assessment']),
+  score: z.coerce.number().nonnegative(),
+  possibleScore: z.coerce.number().nonnegative(),
   moduleCompleted: z.boolean(),
+  moduleMastered: z.boolean(),
   moduleCompletionPercent: z.coerce.number().min(0).max(100),
+  moduleAssessmentScore: z.coerce.number().min(0).max(100).nullable(),
+  moduleStatus: courseProgressStatusSchema,
+  moduleSealAwarded: z.boolean(),
+  levelCompleted: z.boolean(),
+  levelMastered: z.boolean(),
+  levelCompletionPercent: z.coerce.number().min(0).max(100),
+  levelAssessmentScore: z.coerce.number().min(0).max(100).nullable(),
+  levelStatus: courseProgressStatusSchema,
+  levelEmblemAwarded: z.boolean(),
   accuracyPercent: z.coerce.number().min(0).max(100),
+  skillBreakdown: z.array(
+    z.object({
+      skill: z.enum([
+        'vocabulary',
+        'grammar',
+        'reading',
+        'listening',
+        'writing',
+        'speaking',
+        'mixed',
+      ]),
+      score: z.coerce.number().nonnegative(),
+      maxScore: z.coerce.number().nonnegative(),
+      accuracyPercent: z.coerce.number().min(0).max(100),
+    }),
+  ),
+  answerReview: z.array(
+    z.object({
+      blockId: z.string().uuid(),
+      title: z.string(),
+      skill: z.enum([
+        'vocabulary',
+        'grammar',
+        'reading',
+        'listening',
+        'writing',
+        'speaking',
+        'mixed',
+      ]),
+      isCorrect: z.boolean(),
+      score: z.coerce.number().nonnegative(),
+      maxScore: z.coerce.number().nonnegative(),
+      userAnswer: z.unknown(),
+      correctAnswer: z.unknown(),
+    }),
+  ),
+  nextLesson: z.object({ slug: z.string().min(1), title: z.string().min(1) }).nullable(),
+  nextModule: z.object({ slug: z.string().min(1), title: z.string().min(1) }).nullable(),
+  nextLevel: z.object({ slug: z.string().min(1), title: z.string().min(1) }).nullable(),
   unlockedAchievements: z.array(z.string()),
+})
+
+const dateOnlySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+
+const levelProgressValueSchema = z.object({
+  entityId: z.string().uuid(),
+  completionPercent: z.coerce.number().min(0).max(100),
+  averageAccuracy: z.coerce.number().min(0).max(100).nullable(),
+  assessmentScore: z.coerce.number().min(0).max(100).nullable(),
+  status: courseProgressStatusSchema,
+})
+
+const moduleProgressValueSchema = levelProgressValueSchema
+
+const lessonProgressValueSchema = z.object({
+  entityId: z.string().uuid(),
+  completionPercent: z.coerce.number().min(0).max(100),
+  accuracyPercent: z.coerce.number().min(0).max(100).nullable(),
+  status: learningProgressStatusSchema,
+  lastActivityAt: z.string().datetime().nullable(),
+})
+
+export const progressSummarySchema = z.object({
+  courseProgress: z.object({
+    levels: z.array(levelProgressValueSchema),
+    modules: z.array(moduleProgressValueSchema),
+    lessons: z.array(lessonProgressValueSchema),
+  }),
+  overallProgress: z.coerce.number().min(0).max(100),
+  averageAccuracy: z.coerce.number().min(0).max(100).nullable(),
+  lessonsCompleted: z.number().int().nonnegative(),
+  lessonsTotal: z.number().int().nonnegative(),
+  modulesCompleted: z.number().int().nonnegative(),
+  modulesTotal: z.number().int().nonnegative(),
+  levelsCompleted: z.number().int().nonnegative(),
+  levelsTotal: z.number().int().nonnegative(),
+  currentLevel: z
+    .object({
+      id: z.string().uuid(),
+      slug: z.string().min(1),
+      cefr: z.enum(['A2', 'B1', 'B2', 'C1']),
+      title: z.string().min(1),
+      completionPercent: z.coerce.number().min(0).max(100),
+      modulesCompleted: z.number().int().nonnegative(),
+      modulesTotal: z.number().int().nonnegative(),
+    })
+    .nullable(),
+  weeklyGoal: z.object({
+    targetDays: z.number().int().positive(),
+    completedDays: z.number().int().nonnegative(),
+    remainingDays: z.number().int().nonnegative(),
+    weekStartsOn: dateOnlySchema,
+  }),
+  streak: z.object({
+    currentDays: z.number().int().nonnegative(),
+    longestDays: z.number().int().nonnegative(),
+  }),
+  skills: z.array(
+    z.object({
+      slug: z.string().min(1),
+      name: z.string().min(1),
+      attempts: z.number().int().nonnegative(),
+      earnedPoints: z.coerce.number().nonnegative(),
+      possiblePoints: z.coerce.number().nonnegative(),
+      performancePercent: z.coerce.number().min(0).max(100).nullable(),
+    }),
+  ),
+  activity: z.array(
+    z.object({
+      date: dateOnlySchema,
+      lessonsCompleted: z.number().int().nonnegative(),
+      minutesActive: z.number().int().nonnegative(),
+      intensity: z.number().int().min(0).max(4),
+    }),
+  ),
+  milestones: z.array(
+    z.object({
+      slug: z.string().min(1),
+      title: z.string().min(1),
+      description: z.string().min(1),
+      unlocked: z.boolean(),
+      unlockedAt: z.string().datetime().nullable(),
+      progressPercent: z.coerce.number().min(0).max(100),
+    }),
+  ),
 })

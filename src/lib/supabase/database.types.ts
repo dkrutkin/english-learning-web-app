@@ -271,6 +271,10 @@ export type Database = {
         Args: { p_lesson_id: string }
         Returns: Json
       }
+      get_progress_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
     }
     Enums: {
       content_status: ContentStatus

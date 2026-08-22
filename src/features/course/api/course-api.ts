@@ -1,13 +1,10 @@
 import { supabase } from '../../../lib/supabase/client'
 import {
   lessonBlocksResponseSchema,
-  lessonProgressResponseSchema,
   lessonRowSchema,
   lessonsResponseSchema,
-  levelProgressResponseSchema,
   levelRowSchema,
   levelsResponseSchema,
-  moduleProgressResponseSchema,
   moduleRowSchema,
   modulesResponseSchema,
 } from '../schemas/course'
@@ -22,7 +19,7 @@ import type {
 } from '../types/course'
 import { findRecommendedLesson } from '../utils/course'
 import { mockLessonBlocks, mockLessons, mockLevels, mockModules } from './mock-course'
-import { getMockCourseProgress } from './lesson-runner-api'
+import { getProgressSummary } from './progress-summary-api'
 
 const levelColumns =
   'id, slug, cefr, title, description, order_index, illustration_url, status' as const
@@ -191,33 +188,7 @@ export async function getLessonBlocks(
 }
 
 export async function getUserCourseProgress(context: CourseDataContext): Promise<CourseProgress> {
-  if (context.isMock) {
-    return getMockCourseProgress(context.userId)
-  }
-
-  const client = requireSupabase()
-  const [levels, modules, lessons] = await Promise.all([
-    client
-      .from('user_level_progress')
-      .select('level_id, completion_percent, average_accuracy, assessment_score, status')
-      .eq('user_id', context.userId),
-    client
-      .from('user_module_progress')
-      .select('module_id, completion_percent, average_accuracy, assessment_score, status')
-      .eq('user_id', context.userId),
-    client
-      .from('user_lesson_progress')
-      .select('lesson_id, completion_percent, accuracy_percent, status, last_activity_at')
-      .eq('user_id', context.userId),
-  ])
-  raiseQueryError(levels.error, 'level progress')
-  raiseQueryError(modules.error, 'module progress')
-  raiseQueryError(lessons.error, 'lesson progress')
-  return {
-    levels: levelProgressResponseSchema.parse(levels.data ?? []),
-    modules: moduleProgressResponseSchema.parse(modules.data ?? []),
-    lessons: lessonProgressResponseSchema.parse(lessons.data ?? []),
-  }
+  return (await getProgressSummary(context)).courseProgress
 }
 
 async function getPublishedCourse(context: CourseDataContext) {

@@ -15,4 +15,15 @@ describe('Fluent foundation', () => {
     )
     expect(screen.getByRole('img', { name: 'B1 level, 40% complete' })).toBeInTheDocument()
   })
+
+  it('supports an explicit progress value from the shared summary', () => {
+    render(
+      <MemoryRouter>
+        <ThemeProvider>
+          <LevelOrbit level="C1" progress={67} />
+        </ThemeProvider>
+      </MemoryRouter>,
+    )
+    expect(screen.getByRole('img', { name: 'C1 level, 67% complete' })).toBeInTheDocument()
+  })
 })
