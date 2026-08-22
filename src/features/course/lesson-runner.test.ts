@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
   completeLesson,
+  getLessonReview,
   getLessonSession,
   saveLessonSession,
   submitLessonAnswer,
@@ -142,6 +143,28 @@ describe('lesson runner', () => {
     })
     await expect(completeLesson(context, lesson.id)).resolves.toMatchObject({
       accuracyPercent: 80,
+    })
+  })
+
+  it('restores saved mistakes after leaving a completed lesson', async () => {
+    const lesson = mockLessons[3]
+    const block = mockLessonBlocks.find(
+      (entry) => entry.lesson_id === lesson.id && entry.is_graded,
+    )!
+    await submitLessonAnswer(context, lesson.id, block.id, 'wrong answer')
+    await completeLesson(context, lesson.id)
+
+    await expect(getLessonReview(context, lesson.id)).resolves.toMatchObject({
+      lessonId: lesson.id,
+      accuracyPercent: 0,
+      items: [
+        {
+          blockId: block.id,
+          isCorrect: false,
+          userAnswer: 'wrong answer',
+          correctAnswer: 'achievement',
+        },
+      ],
     })
   })
 

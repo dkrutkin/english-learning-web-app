@@ -44,8 +44,10 @@ export function mergeLevelsWithProgress(
   return levels.map((level, index) => ({
     ...level,
     progress:
-      progress.levels.find((entry) => entry.entityId === level.id) ??
-      defaultLevelProgress(level.id, index === 0 ? 'available' : 'locked'),
+      level.status !== 'published'
+        ? defaultLevelProgress(level.id, 'locked')
+        : (progress.levels.find((entry) => entry.entityId === level.id) ??
+          defaultLevelProgress(level.id, index === 0 ? 'available' : 'locked')),
   }))
 }
 

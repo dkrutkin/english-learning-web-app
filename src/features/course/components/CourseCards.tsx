@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Clock3, LockKeyhole } from 'lucide-react'
+import { ArrowRight, Check, Clock3, LockKeyhole, RotateCcw } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { LessonWithProgress, LevelWithProgress, ModuleWithProgress } from '../types/course'
 import { formatMinutes, progressLabels } from '../utils/course'
@@ -9,14 +9,24 @@ function StatusIcon({ status }: { status: LevelWithProgress['progress']['status'
   return null
 }
 
-export function LevelCard({ level }: { level: LevelWithProgress }) {
+export function LevelCard({
+  current = false,
+  level,
+}: {
+  current?: boolean
+  level: LevelWithProgress
+}) {
   const content = (
-    <article className={`level-card${level.progress.status === 'locked' ? 'is-locked' : ''}`}>
+    <article
+      className={`level-card${level.progress.status === 'locked' ? 'is-locked' : ''}${current ? 'is-current' : ''}`}
+    >
       <div className="level-card__top">
         <span className="level-code">{level.cefr}</span>
         <span className="status-pill">
           <StatusIcon status={level.progress.status} />
-          {progressLabels[level.progress.status]}
+          {current && level.progress.status !== 'locked'
+            ? 'Current level'
+            : progressLabels[level.progress.status]}
         </span>
       </div>
       <h2>{level.title}</h2>
@@ -81,6 +91,8 @@ export function LessonCard({
   moduleSlug: string
   locked?: boolean
 }) {
+  const isCompleted = lesson.progress.status === 'completed'
+  const lessonPath = `/app/lesson/${levelSlug}/${moduleSlug}/${lesson.slug}`
   const content = (
     <article className={`lesson-card${locked ? 'is-locked' : ''}`}>
       <span className="lesson-card__number">
@@ -107,13 +119,28 @@ export function LessonCard({
           <span style={{ width: `${lesson.progress.completionPercent}%` }} />
         </div>
       </div>
-      {!locked ? <ArrowRight aria-hidden="true" size={20} /> : null}
+      {!locked ? (
+        <span className="lesson-card__action">
+          {isCompleted
+            ? 'Review lesson'
+            : lesson.progress.status === 'in_progress'
+              ? 'Continue'
+              : 'Start'}
+          <ArrowRight aria-hidden="true" size={20} />
+        </span>
+      ) : null}
     </article>
   )
 
-  return locked ? (
-    content
-  ) : (
-    <Link to={`/app/lesson/${levelSlug}/${moduleSlug}/${lesson.slug}`}>{content}</Link>
+  if (locked) return <div className="lesson-card-shell">{content}</div>
+  return (
+    <div className={`lesson-card-shell${isCompleted ? 'has-review' : ''}`}>
+      <Link to={lessonPath}>{content}</Link>
+      {isCompleted ? (
+        <Link className="lesson-card__review" to={`${lessonPath}?review=mistakes`}>
+          <RotateCcw aria-hidden="true" size={16} /> Review mistakes
+        </Link>
+      ) : null}
+    </div>
   )
 }

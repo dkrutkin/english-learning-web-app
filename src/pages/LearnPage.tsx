@@ -10,6 +10,7 @@ import {
   useCourseLevels,
   useCourseModule,
   useCourseProgress,
+  useProgressSummary,
   useLevelModules,
   useModuleLessons,
 } from '../features/course/hooks/use-course'
@@ -17,15 +18,16 @@ import {
   defaultLessonProgress,
   mergeLevelsWithProgress,
   mergeModulesWithProgress,
+  progressLabels,
 } from '../features/course/utils/course'
 
 function CourseRoadmap() {
   const levels = useCourseLevels()
-  const progress = useCourseProgress()
-  if (levels.isPending || progress.isPending) return <CourseLoadingState />
-  if (levels.isError || progress.isError) {
+  const summary = useProgressSummary()
+  if (levels.isPending || summary.isPending) return <CourseLoadingState />
+  if (levels.isError || summary.isError) {
     return (
-      <CourseErrorState onRetry={() => void Promise.all([levels.refetch(), progress.refetch()])} />
+      <CourseErrorState onRetry={() => void Promise.all([levels.refetch(), summary.refetch()])} />
     )
   }
   if (levels.data.length === 0) {
@@ -37,7 +39,7 @@ function CourseRoadmap() {
     )
   }
 
-  const courseLevels = mergeLevelsWithProgress(levels.data, progress.data)
+  const courseLevels = mergeLevelsWithProgress(levels.data, summary.data.courseProgress)
   return (
     <>
       <header className="page-header">
@@ -47,9 +49,32 @@ function CourseRoadmap() {
           <p>Follow your path from A2 to C1</p>
         </div>
       </header>
+      <section className="roadmap-overview" aria-label="Current course progress">
+        <div>
+          <span>Current level</span>
+          <strong>{summary.data.currentLevel?.cefr ?? 'A2'}</strong>
+          <small>{summary.data.currentLevel?.title ?? 'Choose your starting level'}</small>
+        </div>
+        <div>
+          <span>Course progress</span>
+          <strong>{Math.round(summary.data.overallProgress)}%</strong>
+          <div className="progress-line">
+            <span style={{ width: `${summary.data.overallProgress}%` }} />
+          </div>
+        </div>
+        <div>
+          <span>Lessons completed</span>
+          <strong>{summary.data.lessonsCompleted}</strong>
+          <small>of {summary.data.lessonsTotal} published lessons</small>
+        </div>
+      </section>
       <section className="level-grid">
         {courseLevels.map((level) => (
-          <LevelCard key={level.id} level={level} />
+          <LevelCard
+            current={summary.data.currentLevel?.id === level.id}
+            key={level.id}
+            level={level}
+          />
         ))}
       </section>
     </>
@@ -82,19 +107,25 @@ function LevelOverview({ levelSlug }: { levelSlug: string }) {
     )
   }
 
+  const currentLevel = level.data
   const courseModules = mergeModulesWithProgress(modules.data, progress.data)
+  const levelProgress = progress.data.levels.find((entry) => entry.entityId === currentLevel.id)
   return (
     <>
       <nav aria-label="Course breadcrumbs" className="course-breadcrumbs">
         <Link to="/app/learn">Learn</Link>
         <span>/</span>
-        <span>{level.data.cefr}</span>
+        <span>{currentLevel.cefr}</span>
       </nav>
       <header className="page-header course-page-header">
         <div>
-          <p className="eyebrow">{level.data.cefr} level</p>
-          <h1>{level.data.title}</h1>
-          <p>{level.data.description}</p>
+          <p className="eyebrow">{currentLevel.cefr} level</p>
+          <h1>{currentLevel.title}</h1>
+          <p>{currentLevel.description}</p>
+          <div className="course-page-progress">
+            <span>{progressLabels[levelProgress?.status ?? 'available']}</span>
+            <strong>{Math.round(levelProgress?.completionPercent ?? 0)}% complete</strong>
+          </div>
         </div>
       </header>
       {courseModules.length === 0 ? (
@@ -176,6 +207,19 @@ function ModuleOverview({ levelSlug, moduleSlug }: { levelSlug: string; moduleSl
     ...lesson,
     progress: lessonProgress.get(lesson.id) ?? defaultLessonProgress(lesson.id),
   }))
+  const currentModuleProgress = moduleProgress.get(module.data.id)
+  const lessonsWithAccess = [...courseLessons]
+    .sort((left, right) => left.orderIndex - right.orderIndex)
+    .map((lesson, index, orderedLessons) => {
+      const completed = lesson.progress.status === 'completed'
+      const previousRequiredComplete = orderedLessons
+        .slice(0, index)
+        .filter((entry) => entry.isRequired)
+        .every((entry) => entry.progress.status === 'completed')
+      const locked =
+        currentModuleProgress?.status === 'locked' || (!completed && !previousRequiredComplete)
+      return { lesson, locked }
+    })
   return (
     <>
       <nav aria-label="Course breadcrumbs" className="course-breadcrumbs">
@@ -190,6 +234,10 @@ function ModuleOverview({ levelSlug, moduleSlug }: { levelSlug: string; moduleSl
           <p className="eyebrow">Module {module.data.orderIndex}</p>
           <h1>{module.data.title}</h1>
           <p>{module.data.description}</p>
+          <div className="course-page-progress">
+            <span>{progressLabels[currentModuleProgress?.status ?? 'available']}</span>
+            <strong>{Math.round(currentModuleProgress?.completionPercent ?? 0)}% complete</strong>
+          </div>
           {module.data.learningOutcome && (
             <div className="learning-outcome">
               <strong>After this module</strong>
@@ -205,12 +253,12 @@ function ModuleOverview({ levelSlug, moduleSlug }: { levelSlug: string; moduleSl
         />
       ) : (
         <section className="lesson-list">
-          {courseLessons.map((lesson) => (
+          {lessonsWithAccess.map(({ lesson, locked }) => (
             <LessonCard
               key={lesson.id}
               lesson={lesson}
               levelSlug={levelSlug}
-              locked={lesson.slug === 'level-assessment' && !levelCourseworkComplete}
+              locked={locked || (lesson.slug === 'level-assessment' && !levelCourseworkComplete)}
               moduleSlug={moduleSlug}
             />
           ))}

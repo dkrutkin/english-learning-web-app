@@ -275,6 +275,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_course_roadmap: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      get_lesson_review: {
+        Args: { p_lesson_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       content_status: ContentStatus

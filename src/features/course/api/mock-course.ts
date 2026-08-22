@@ -19,6 +19,26 @@ export const mockLevels = [
     illustration_url: null,
     status: 'published',
   },
+  {
+    id: '10000000-0000-4000-8000-000000000003',
+    slug: 'b2',
+    cefr: 'B2',
+    title: 'Confident English',
+    description: 'Handle complex conversations, professional situations and detailed ideas.',
+    order_index: 3,
+    illustration_url: null,
+    status: 'draft',
+  },
+  {
+    id: '10000000-0000-4000-8000-000000000004',
+    slug: 'c1',
+    cefr: 'C1',
+    title: 'Advanced English',
+    description: 'Understand nuance and express complex ideas naturally and precisely.',
+    order_index: 4,
+    illustration_url: null,
+    status: 'draft',
+  },
 ] as const
 
 export const mockModules = [

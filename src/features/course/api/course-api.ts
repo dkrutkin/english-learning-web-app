@@ -42,13 +42,23 @@ function raiseQueryError(error: { message: string } | null, resource: string) {
 export async function getCourseLevels(context: CourseDataContext): Promise<CourseLevel[]> {
   if (context.isMock) return levelsResponseSchema.parse(mockLevels)
 
-  const { data, error } = await requireSupabase()
-    .from('levels')
-    .select(levelColumns)
-    .eq('status', 'published')
-    .order('order_index')
+  const { data, error } = await requireSupabase().rpc('get_course_roadmap')
   raiseQueryError(error, 'course levels')
   return levelsResponseSchema.parse(data ?? [])
+}
+
+export async function getUserCourseProfile(context: CourseDataContext) {
+  if (context.isMock) {
+    return { displayName: 'Demo Learner' }
+  }
+
+  const { data, error } = await requireSupabase()
+    .from('profiles')
+    .select('display_name')
+    .eq('id', context.userId)
+    .single()
+  raiseQueryError(error, 'course profile')
+  return { displayName: data?.display_name?.trim() || null }
 }
 
 export async function getCourseLevel(
@@ -56,7 +66,7 @@ export async function getCourseLevel(
   levelSlug: string,
 ): Promise<CourseLevel | null> {
   if (context.isMock) {
-    const row = mockLevels.find((level) => level.slug === levelSlug)
+    const row = mockLevels.find((level) => level.slug === levelSlug && level.status === 'published')
     return row ? levelRowSchema.parse(row) : null
   }
 
@@ -192,7 +202,7 @@ export async function getUserCourseProgress(context: CourseDataContext): Promise
 }
 
 async function getPublishedCourse(context: CourseDataContext) {
-  const levels = await getCourseLevels(context)
+  const levels = (await getCourseLevels(context)).filter((level) => level.status === 'published')
   if (context.isMock) {
     return {
       levels,

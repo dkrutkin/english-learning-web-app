@@ -6,14 +6,29 @@ import {
   useCourseLevels,
   useProgressSummary,
   useRecommendedLesson,
+  useUserCourseProfile,
 } from '../features/course/hooks/use-course'
 
 function dayLabel(value: number) {
   return `${value} ${value === 1 ? 'day' : 'days'}`
 }
 
+function greetingForCurrentTime() {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+  return 'Good evening'
+}
+
+function weekdayLabel(value: string) {
+  return new Intl.DateTimeFormat('en', { weekday: 'short', timeZone: 'UTC' }).format(
+    new Date(`${value}T00:00:00Z`),
+  )
+}
+
 function ContinueLearningCard() {
   const recommended = useRecommendedLesson()
+  const summary = useProgressSummary()
 
   if (recommended.isPending) {
     return (
@@ -57,12 +72,15 @@ function ContinueLearningCard() {
   }
 
   const { lesson, level, module, progress } = recommended.data
+  const moduleProgress = summary.data?.courseProgress.modules.find(
+    (entry) => entry.entityId === module.id,
+  )
   const action = progress.status === 'in_progress' ? 'Continue lesson' : 'Start lesson'
   return (
     <article className="continue-card">
       <p className="eyebrow">Continue learning</p>
       <span className="muted-label">
-        {level.cefr} · Module {module.orderIndex}
+        {level.cefr} · {module.title}
       </span>
       <h2>{lesson.title}</h2>
       <p>
@@ -72,6 +90,9 @@ function ContinueLearningCard() {
         <span style={{ width: `${progress.completionPercent}%` }} />
       </div>
       <span className="progress-caption">{progress.completionPercent}% complete</span>
+      <span className="continue-card__module-progress">
+        Module {Math.round(moduleProgress?.completionPercent ?? 0)}% complete
+      </span>
       <Link
         className="button button--primary"
         to={`/app/lesson/${level.slug}/${module.slug}/${lesson.slug}`}
@@ -86,7 +107,12 @@ export function DashboardPage() {
   const { user } = useAuth()
   const summary = useProgressSummary()
   const levels = useCourseLevels()
-  const displayName = user?.user_metadata.display_name ?? user?.email?.split('@')[0] ?? 'Learner'
+  const profile = useUserCourseProfile()
+  const displayName =
+    profile.data?.displayName ??
+    user?.user_metadata.display_name ??
+    user?.email?.split('@')[0] ??
+    'Learner'
   const levelCodes = ['A2', 'B1', 'B2', 'C1'] as const
   const progressByLevel = new Map(
     (summary.data?.courseProgress.levels ?? []).map((entry) => [entry.entityId, entry]),
@@ -97,7 +123,9 @@ export function DashboardPage() {
     <div className="page-container">
       <header className="page-header">
         <div>
-          <h1>Good afternoon, {displayName}</h1>
+          <h1>
+            {greetingForCurrentTime()}, {displayName}
+          </h1>
           <p>Ready for your next lesson?</p>
         </div>
       </header>
@@ -149,6 +177,27 @@ export function DashboardPage() {
           </div>
         </article>
       </section>
+      <section className="dashboard-activity-card">
+        <div>
+          <p className="eyebrow">Weekly activity</p>
+          <h2>Your last 7 days</h2>
+          <span className="progress-caption">
+            {dayLabel(summary.data?.weeklyGoal.completedDays ?? 0)} active this week
+          </span>
+        </div>
+        <div className="weekly-activity" aria-label="Learning activity during the last 7 days">
+          {(summary.data?.activity.slice(-7) ?? []).map((day) => (
+            <div key={day.date}>
+              <span
+                aria-label={`${weekdayLabel(day.date)}: ${day.minutesActive} minutes`}
+                style={{ height: `${Math.max(8, day.intensity * 18)}px` }}
+                title={`${day.minutesActive} min · ${day.lessonsCompleted} lessons`}
+              />
+              <small>{weekdayLabel(day.date)}</small>
+            </div>
+          ))}
+        </div>
+      </section>
       <section className="course-journey-card">
         <div>
           <p className="eyebrow">Your journey</p>
@@ -183,10 +232,10 @@ export function DashboardPage() {
           })}
         </div>
       </section>
-      {summary.isError || levels.isError ? (
+      {summary.isError || levels.isError || profile.isError ? (
         <button
           className="button button--secondary dashboard-progress-retry"
-          onClick={() => void Promise.all([summary.refetch(), levels.refetch()])}
+          onClick={() => void Promise.all([summary.refetch(), levels.refetch(), profile.refetch()])}
           type="button"
         >
           Refresh progress

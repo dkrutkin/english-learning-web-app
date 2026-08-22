@@ -32,6 +32,7 @@ export const lessonBlockTypeSchema = z.enum([
   'quiz',
 ])
 
+const contentStatusSchema = z.enum(['draft', 'published', 'archived'])
 const publishedStatusSchema = z.literal('published')
 
 export const levelRowSchema = z
@@ -43,7 +44,7 @@ export const levelRowSchema = z
     description: z.string(),
     order_index: z.number().int().positive(),
     illustration_url: z.string().url().nullable(),
-    status: publishedStatusSchema,
+    status: contentStatusSchema,
   })
   .transform((row) => ({
     id: row.id,
@@ -387,6 +388,17 @@ export const answerResultSchema = z.object({
   usedHint: z.boolean(),
 })
 
+export const answerReviewItemSchema = z.object({
+  blockId: z.string().uuid(),
+  title: z.string(),
+  skill: z.enum(['vocabulary', 'grammar', 'reading', 'listening', 'writing', 'speaking', 'mixed']),
+  isCorrect: z.boolean(),
+  score: z.coerce.number().nonnegative(),
+  maxScore: z.coerce.number().nonnegative(),
+  userAnswer: z.unknown(),
+  correctAnswer: z.unknown(),
+})
+
 export const lessonResultSchema = z.object({
   lessonCompleted: z.literal(true),
   lessonKind: z.enum(['lesson', 'module_assessment', 'level_assessment']),
@@ -421,30 +433,17 @@ export const lessonResultSchema = z.object({
       accuracyPercent: z.coerce.number().min(0).max(100),
     }),
   ),
-  answerReview: z.array(
-    z.object({
-      blockId: z.string().uuid(),
-      title: z.string(),
-      skill: z.enum([
-        'vocabulary',
-        'grammar',
-        'reading',
-        'listening',
-        'writing',
-        'speaking',
-        'mixed',
-      ]),
-      isCorrect: z.boolean(),
-      score: z.coerce.number().nonnegative(),
-      maxScore: z.coerce.number().nonnegative(),
-      userAnswer: z.unknown(),
-      correctAnswer: z.unknown(),
-    }),
-  ),
+  answerReview: z.array(answerReviewItemSchema),
   nextLesson: z.object({ slug: z.string().min(1), title: z.string().min(1) }).nullable(),
   nextModule: z.object({ slug: z.string().min(1), title: z.string().min(1) }).nullable(),
   nextLevel: z.object({ slug: z.string().min(1), title: z.string().min(1) }).nullable(),
   unlockedAchievements: z.array(z.string()),
+})
+
+export const lessonReviewSchema = z.object({
+  lessonId: z.string().uuid(),
+  accuracyPercent: z.coerce.number().min(0).max(100),
+  items: z.array(answerReviewItemSchema),
 })
 
 const dateOnlySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)

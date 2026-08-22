@@ -9,6 +9,7 @@ import {
   getLevelModules,
   getModuleLessons,
   getRecommendedLesson,
+  getUserCourseProfile,
 } from '../api/course-api'
 import { getProgressSummary } from '../api/progress-summary-api'
 import { courseKeys } from './query-keys'
@@ -110,6 +111,16 @@ export function useProgressSummary() {
   return useQuery({
     queryKey: courseKeys.progressSummary(context.userId),
     queryFn: () => getProgressSummary(context),
+    enabled: isAuthenticated,
+    ...courseQueryOptions,
+  })
+}
+
+export function useUserCourseProfile() {
+  const { context, isAuthenticated } = useCourseContext()
+  return useQuery({
+    queryKey: courseKeys.profile(context.userId),
+    queryFn: () => getUserCourseProfile(context),
     enabled: isAuthenticated,
     ...courseQueryOptions,
   })

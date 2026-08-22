@@ -3,6 +3,7 @@ import type { Json } from '../../../lib/supabase/database.types'
 import {
   answerResultSchema,
   lessonProgressResponseSchema,
+  lessonReviewSchema,
   lessonResultSchema,
   lessonSessionRowSchema,
   levelProgressResponseSchema,
@@ -14,6 +15,7 @@ import type {
   CourseProgress,
   LessonAnswer,
   LessonResult,
+  LessonReview,
   LessonSession,
 } from '../types/course'
 import {
@@ -532,5 +534,66 @@ export async function completeLesson(
       : moduleCompleted
         ? ['first-step', 'first-module']
         : ['first-step'],
+  })
+}
+
+export async function getLessonReview(
+  context: CourseDataContext,
+  lessonId: string,
+): Promise<LessonReview> {
+  if (!context.isMock) {
+    const { data, error } = await requireSupabase().rpc('get_lesson_review', {
+      p_lesson_id: lessonId,
+    })
+    if (error) throw error
+    return lessonReviewSchema.parse(data)
+  }
+
+  const lesson = mockLessons.find((entry) => entry.id === lessonId)
+  if (!lesson) throw new Error('Mock lesson not found.')
+  const attempts = parseStored<Record<string, MockAttempt[]>>(mockAttemptsKey(context.userId), {})
+  const items = mockLessonBlocks
+    .filter((block) => block.lesson_id === lessonId && block.is_required && block.is_graded)
+    .flatMap((block) => {
+      const blockAttempts = attempts[block.id]
+      if (!blockAttempts?.length) return []
+      const best = blockAttempts.reduce((currentBest, attempt) =>
+        attempt.score > currentBest.score ? attempt : currentBest,
+      )
+      const blockType: string = block.type
+      const skill =
+        blockType === 'fill_gap' || blockType === 'sentence_builder'
+          ? 'grammar'
+          : blockType === 'reading_question'
+            ? 'reading'
+            : blockType === 'listening_question'
+              ? 'listening'
+              : blockType === 'writing_prompt'
+                ? 'writing'
+                : blockType === 'speaking_prompt'
+                  ? 'speaking'
+                  : blockType === 'quiz'
+                    ? 'mixed'
+                    : 'vocabulary'
+      return [
+        {
+          blockId: block.id,
+          title: block.title ?? 'Exercise',
+          skill,
+          isCorrect: best.isCorrect,
+          score: best.score,
+          maxScore: best.maxScore,
+          userAnswer: best.answer,
+          correctAnswer: mockAnswerKeys[block.id],
+        },
+      ]
+    })
+  if (items.length === 0) throw new Error('No completed exercises are available to review.')
+  const score = items.reduce((total, item) => total + item.score, 0)
+  const possible = items.reduce((total, item) => total + item.maxScore, 0)
+  return lessonReviewSchema.parse({
+    lessonId,
+    accuracyPercent: possible > 0 ? Math.round((score / possible) * 100) : 100,
+    items,
   })
 }

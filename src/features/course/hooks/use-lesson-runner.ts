@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../auth/AuthProvider'
 import {
   completeLesson,
+  getLessonReview,
   getLessonSession,
   saveLessonSession,
   submitLessonAnswer,
@@ -59,5 +60,15 @@ export function useCompleteLesson(lessonId: string) {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: courseKeys.all })
     },
+  })
+}
+
+export function useLessonReview(lessonId: string, enabled = true) {
+  const { context, isAuthenticated } = useRunnerContext()
+  return useQuery({
+    queryKey: courseKeys.review(context.userId, lessonId),
+    queryFn: () => getLessonReview(context, lessonId),
+    enabled: enabled && isAuthenticated && Boolean(lessonId),
+    staleTime: 5 * 60_000,
   })
 }
