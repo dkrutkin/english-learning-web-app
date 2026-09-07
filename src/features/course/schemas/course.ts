@@ -530,3 +530,48 @@ export const progressSummarySchema = z.object({
     }),
   ),
 })
+
+const achievementNotificationSchema = z.object({
+  id: z.string().uuid(),
+  slug: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  category: z.string().min(1),
+  icon: z.string().min(1),
+  unlockedAt: z.string().datetime(),
+})
+
+const completionAwardSchema = z.object({
+  id: z.string().uuid(),
+  slug: z.string().min(1),
+  title: z.string().min(1),
+  level: z.enum(['A2', 'B1', 'B2', 'C1']),
+  status: z.enum(['completed', 'mastered']),
+  awardedAt: z.string().datetime().nullable(),
+  score: z.coerce.number().min(0).max(100).nullable(),
+})
+
+export const achievementsOverviewSchema = z.object({
+  achievements: z.array(
+    achievementNotificationSchema.omit({ unlockedAt: true }).extend({
+      unlocked: z.boolean(),
+      unlockedAt: z.string().datetime().nullable(),
+      currentValue: z.coerce.number().nonnegative(),
+      targetValue: z.coerce.number().positive(),
+      progressPercent: z.coerce.number().min(0).max(100),
+    }),
+  ),
+  moduleSeals: z.array(completionAwardSchema),
+  levelEmblems: z.array(completionAwardSchema),
+  timeline: z.array(
+    z.object({
+      id: z.string().uuid(),
+      type: z.enum(['achievement', 'module_seal', 'level_emblem']),
+      title: z.string().min(1),
+      subtitle: z.string().min(1),
+      occurredAt: z.string().datetime(),
+    }),
+  ),
+})
+
+export const achievementNotificationsSchema = z.array(achievementNotificationSchema)

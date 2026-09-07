@@ -1,5 +1,6 @@
 import { BookOpen, Check, Headphones, Info, Mic, Sparkles } from 'lucide-react'
-import { useState, type ComponentType } from 'react'
+import { useEffect, useState, type ComponentType } from 'react'
+import { useProfilePreferences } from '../../../profile/ProfilePreferencesProvider'
 import type { LessonAnswer, LessonBlock, LessonBlockType } from '../../types/course'
 import { stringList, textValue } from './runner-utils'
 
@@ -111,7 +112,12 @@ function FillGapExercise({ answer, block, onChange }: ExerciseProps) {
 
 function VocabularyExercise({ block }: ExerciseProps) {
   const items = Array.isArray(block.content.items) ? block.content.items : []
-  const [showTranslations, setShowTranslations] = useState(false)
+  const preferences = useProfilePreferences()
+  const [showTranslations, setShowTranslations] = useState(preferences.showTranslations)
+  useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- Saved preferences can arrive after the lesson block renders.
+    setShowTranslations(preferences.showTranslations)
+  }, [preferences.showTranslations])
   const hasTranslations = items.some(
     (item) => item && typeof item === 'object' && typeof item.translation === 'string',
   )

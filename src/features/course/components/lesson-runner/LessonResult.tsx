@@ -216,7 +216,7 @@ export function LessonResult({
       ) : null}
 
       {result.unlockedAchievements.length > 0 ? (
-        <div className="achievement-unlocked">
+        <div aria-live="polite" className="achievement-unlocked" role="status">
           <Award aria-hidden="true" />
           <div>
             <strong>Achievement unlocked</strong>

@@ -2,6 +2,7 @@ import { supabase } from '../../../lib/supabase/client'
 import type { Json } from '../../../lib/supabase/database.types'
 import {
   answerResultSchema,
+  achievementNotificationsSchema,
   lessonProgressResponseSchema,
   lessonReviewSchema,
   lessonResultSchema,
@@ -303,7 +304,18 @@ export async function completeLesson(
       p_lesson_id: lessonId,
     })
     if (error) throw error
-    return lessonResultSchema.parse(data)
+    const result = lessonResultSchema.parse(data)
+    const { data: achievementData, error: achievementError } = await requireSupabase().rpc(
+      'evaluate_user_achievements',
+    )
+    if (achievementError) throw achievementError
+    const evaluated = achievementNotificationsSchema.parse(achievementData)
+    return {
+      ...result,
+      unlockedAchievements: [
+        ...new Set([...result.unlockedAchievements, ...evaluated.map(({ slug }) => slug)]),
+      ],
+    }
   }
 
   const lesson = mockLessons.find((entry) => entry.id === lessonId)
@@ -466,6 +478,24 @@ export async function completeLesson(
     JSON.stringify({ levels, lessons, modules }),
   )
 
+  const achievementHistoryKey = `fluent-achievements:${context.userId}`
+  const achievementHistory = parseStored<Record<string, string>>(achievementHistoryKey, {})
+  const achievementCandidates = [
+    ...(baseCompleted.size >= 1 ? ['first-step'] : []),
+    ...(baseCompleted.size >= 5 ? ['getting-started'] : []),
+    ...(moduleCompleted ? ['first-module'] : []),
+    ...(accuracyPercent === 100 ? ['perfect-lesson'] : []),
+    ...(levelCompleted ? ['level-complete'] : []),
+  ]
+  const unlockedAchievements = [...new Set(achievementCandidates)].filter(
+    (slug) => !achievementHistory[slug],
+  )
+  const unlockedAt = new Date().toISOString()
+  unlockedAchievements.forEach((slug) => {
+    achievementHistory[slug] = unlockedAt
+  })
+  window.localStorage.setItem(achievementHistoryKey, JSON.stringify(achievementHistory))
+
   const review = gradedBlocks.map((block, index) => {
     const result = bestAttempts[index]
     const blockType: string = block.type
@@ -529,11 +559,7 @@ export async function completeLesson(
       moduleCompleted && nextModule ? { slug: nextModule.slug, title: nextModule.title } : null,
     nextLevel:
       levelCompleted && nextLevel ? { slug: nextLevel.slug, title: nextLevel.title } : null,
-    unlockedAchievements: levelCompleted
-      ? ['first-step', 'first-module', 'level-complete']
-      : moduleCompleted
-        ? ['first-step', 'first-module']
-        : ['first-step'],
+    unlockedAchievements,
   })
 }
 

@@ -7,6 +7,7 @@ import {
   emailSchema,
   passwordConfirmationSchema,
 } from '../features/auth/validation'
+import { savePendingConfirmation } from '../features/auth/pending-confirmation'
 
 type AuthMode = 'login' | 'signup' | 'forgot-password' | 'reset-password'
 type LocationState = { email?: string; from?: string; notice?: string }
@@ -105,6 +106,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
         navigate(destination, { replace: true })
       } else if (mode === 'signup') {
         const { needsEmailConfirmation } = await auth.signUp(email, password)
+        if (needsEmailConfirmation) savePendingConfirmation(email)
         navigate(needsEmailConfirmation ? '/confirm-email' : '/onboarding', {
           replace: true,
           state: { email },

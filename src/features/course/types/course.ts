@@ -15,6 +15,7 @@ import type {
   moduleRowSchema,
   progressSummarySchema,
   answerResultSchema,
+  achievementsOverviewSchema,
 } from '../schemas/course'
 
 export type CourseProgressStatus = z.infer<typeof courseProgressStatusSchema>
@@ -32,6 +33,7 @@ export type AnswerResult = z.infer<typeof answerResultSchema>
 export type LessonResult = z.infer<typeof lessonResultSchema>
 export type LessonReview = z.infer<typeof lessonReviewSchema>
 export type ProgressSummary = z.infer<typeof progressSummarySchema>
+export type AchievementsOverview = z.infer<typeof achievementsOverviewSchema>
 export type LessonAnswer = string | string[] | Record<string, string>
 
 export type CourseProgress = {

@@ -12,6 +12,7 @@ import {
   getUserCourseProfile,
 } from '../api/course-api'
 import { getProgressSummary } from '../api/progress-summary-api'
+import { getAchievementsOverview } from '../api/achievements-api'
 import { courseKeys } from './query-keys'
 
 const courseQueryOptions = { staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
@@ -111,6 +112,16 @@ export function useProgressSummary() {
   return useQuery({
     queryKey: courseKeys.progressSummary(context.userId),
     queryFn: () => getProgressSummary(context),
+    enabled: isAuthenticated,
+    ...courseQueryOptions,
+  })
+}
+
+export function useAchievementsOverview() {
+  const { context, isAuthenticated } = useCourseContext()
+  return useQuery({
+    queryKey: courseKeys.achievements(context.userId),
+    queryFn: () => getAchievementsOverview(context),
     enabled: isAuthenticated,
     ...courseQueryOptions,
   })

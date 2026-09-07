@@ -19,6 +19,26 @@ vi.mock('../features/auth/AuthProvider', () => ({ useAuth: () => auth }))
 describe('AuthPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    window.sessionStorage.clear()
+  })
+
+  it('remembers the pending email after signup', async () => {
+    auth.signUp.mockResolvedValueOnce({ needsEmailConfirmation: true })
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter>
+        <AuthPage mode="signup" />
+      </MemoryRouter>,
+    )
+
+    await user.type(screen.getByLabelText('Email'), 'learner@example.com')
+    await user.type(screen.getByLabelText('Password'), 'secure-pass')
+    await user.type(screen.getByLabelText('Confirm password'), 'secure-pass')
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+
+    expect(window.sessionStorage.getItem('fluent-pending-email-confirmation')).toContain(
+      'learner@example.com',
+    )
   })
 
   it('submits valid login credentials', async () => {

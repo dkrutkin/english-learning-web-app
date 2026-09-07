@@ -20,8 +20,10 @@ type AuthContextValue = {
   mockCredentials: { email: string; password: string } | null
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<{ needsEmailConfirmation: boolean }>
+  resendConfirmation: (email: string) => Promise<void>
   requestPasswordReset: (email: string) => Promise<void>
   updatePassword: (password: string) => Promise<void>
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -146,6 +148,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (error) throw error
         return { needsEmailConfirmation: data.session === null }
       },
+      async resendConfirmation(email) {
+        const { error } = await requireSupabase().auth.resend({
+          type: 'signup',
+          email,
+          options: { emailRedirectTo: redirectUrl('/confirm-email') },
+        })
+        if (error) throw error
+      },
       async requestPasswordReset(email) {
         const { error } = await requireSupabase().auth.resetPasswordForEmail(email, {
           redirectTo: redirectUrl('/reset-password'),
@@ -157,6 +167,24 @@ export function AuthProvider({ children }: PropsWithChildren) {
         const { error } = await client.auth.updateUser({ password })
         if (error) throw error
         await client.auth.signOut({ scope: 'local' })
+      },
+      async changePassword(currentPassword, newPassword) {
+        if (isUsingMock && mockCredentials) {
+          if (currentPassword !== mockCredentials.password) {
+            throw new Error('Current password is incorrect.')
+          }
+          return
+        }
+        const client = requireSupabase()
+        const email = session?.user.email
+        if (!email) throw new Error('Your account email is unavailable.')
+        const verification = await client.auth.signInWithPassword({
+          email,
+          password: currentPassword,
+        })
+        if (verification.error) throw new Error('Current password is incorrect.')
+        const { error } = await client.auth.updateUser({ password: newPassword })
+        if (error) throw error
       },
       async signOut() {
         if (isUsingMock) {

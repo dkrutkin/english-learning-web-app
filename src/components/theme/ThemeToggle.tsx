@@ -7,8 +7,18 @@ const options: Array<{ value: Theme; label: string; icon: typeof Sun }> = [
   { value: 'system', label: 'System', icon: Laptop },
 ]
 
-export function ThemeToggle({ compact = false }: { compact?: boolean }) {
+export function ThemeToggle({
+  compact = false,
+  onChange,
+}: {
+  compact?: boolean
+  onChange?: (theme: Theme) => void
+}) {
   const { theme, setTheme } = useTheme()
+  const changeTheme = (next: Theme) => {
+    setTheme(next)
+    onChange?.(next)
+  }
   if (compact) {
     const next: Theme = theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light'
     const current = options.find((item) => item.value === theme) ?? options[2]
@@ -18,7 +28,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
         aria-label={`Theme: ${current.label}. Change theme`}
         className="icon-button"
         type="button"
-        onClick={() => setTheme(next)}
+        onClick={() => changeTheme(next)}
       >
         <Icon size={20} />
       </button>
@@ -32,7 +42,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
           className={theme === value ? 'is-active' : undefined}
           key={value}
           type="button"
-          onClick={() => setTheme(value)}
+          onClick={() => changeTheme(value)}
         >
           <Icon size={16} />
           {label}

@@ -120,7 +120,7 @@ describe('lesson runner', () => {
         slug: 'present-perfect-essentials',
         title: 'Present perfect essentials',
       },
-      unlockedAchievements: ['first-step'],
+      unlockedAchievements: ['first-step', 'perfect-lesson'],
     })
   })
 
@@ -219,7 +219,7 @@ describe('lesson runner', () => {
           moduleSealAwarded: true,
           nextLesson: { slug: 'level-assessment', title: 'B1 level assessment' },
           nextModule: { slug: 'work-and-opinions', title: 'Work and opinions' },
-          unlockedAchievements: ['first-step', 'first-module'],
+          unlockedAchievements: ['first-module'],
         })
       }
     }
@@ -258,7 +258,7 @@ describe('lesson runner', () => {
       levelAssessmentScore: 100,
       levelStatus: 'mastered',
       levelEmblemAwarded: true,
-      unlockedAchievements: ['first-step', 'first-module', 'level-complete'],
+      unlockedAchievements: ['level-complete'],
     })
   })
 })

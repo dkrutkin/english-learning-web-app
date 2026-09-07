@@ -283,6 +283,14 @@ export type Database = {
         Args: { p_lesson_id: string }
         Returns: Json
       }
+      evaluate_user_achievements: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      get_achievements_overview: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
     }
     Enums: {
       content_status: ContentStatus
